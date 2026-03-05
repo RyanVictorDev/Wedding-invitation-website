@@ -1,6 +1,6 @@
-# Wedding app (wedding-front)
+#Wedding app (wedding-front)
 
-\u0017Wedding website
+Wedding website
 
 ## Install the dependencies
 ```bash
