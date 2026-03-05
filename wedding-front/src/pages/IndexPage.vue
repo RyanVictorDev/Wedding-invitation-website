@@ -145,7 +145,7 @@ onBeforeUnmount(() => {
 .wedding-hero {
   position: relative;
   min-height: 100vh;
-  background-image: url('https://images.pexels.com/photos/1024993/pexels-photo-1024993.jpeg');
+  background-image: url('../assets/background.png');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
