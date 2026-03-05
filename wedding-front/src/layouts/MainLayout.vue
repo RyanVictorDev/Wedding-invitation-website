@@ -57,18 +57,32 @@ onBeforeUnmount(() => {
 .header {
   background: transparent;
   color: #fff7f2;
-  box-shadow: none;
   transition:
     background 220ms ease-out,
-    box-shadow 220ms ease-out,
     backdrop-filter 220ms ease-out;
   backdrop-filter: none;
 }
 
+.header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(75, 43, 40, 0.98),
+    rgba(140, 59, 42, 0.96)
+  );
+  opacity: 0;
+  transition: opacity 220ms ease-out;
+  z-index: -1;
+}
+
 .header--scrolled {
-  background: linear-gradient(to right, rgba(75, 43, 40, 0.98), rgba(140, 59, 42, 0.96));
   backdrop-filter: blur(10px);
-  box-shadow: none;
+}
+
+.header--scrolled::before {
+  opacity: 1;
 }
 
 .toolbar {
