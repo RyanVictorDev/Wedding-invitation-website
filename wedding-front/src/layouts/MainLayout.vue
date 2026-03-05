@@ -1,7 +1,6 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="root-layout">
     <q-header
-      elevated
       :class="['header', { 'header--scrolled': isScrolled }]"
     >
       <q-toolbar class="toolbar">
