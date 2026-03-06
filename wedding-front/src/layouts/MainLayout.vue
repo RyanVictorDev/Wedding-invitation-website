@@ -10,10 +10,10 @@
           round
           icon="spa"
           aria-label="Menu"
-          @click="toggleLeftDrawer"
+          @click="goToHome"
         />
 
-        <q-toolbar-title class="title">
+        <q-toolbar-title @click="goToHome" class="title">
           C &amp; R
         </q-toolbar-title>
       </q-toolbar>
@@ -26,16 +26,17 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 
-const leftDrawerOpen = ref(false);
+const router = useRouter();
 const isScrolled = ref(false);
 
 function handleScroll () {
   isScrolled.value = window.scrollY > 10;
 }
 
-function toggleLeftDrawer () {
-  leftDrawerOpen.value = !leftDrawerOpen.value;
+function goToHome () {
+  void router.push('/')
 }
 
 onMounted(() => {
@@ -93,5 +94,6 @@ onBeforeUnmount(() => {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   font-size: 0.9rem;
+  cursor: pointer;
 }
 </style>

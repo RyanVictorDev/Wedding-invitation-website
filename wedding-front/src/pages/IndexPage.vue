@@ -40,50 +40,38 @@
       </div>
 
       <div class="details-grid">
-        <div class="details-card" data-reveal>
-          <div class="details-icon">
-            <span class="icon-circle">⏰</span>
-          </div>
-          <h3>Data &amp; Horário</h3>
-          <p class="details-highlight">3 de Outubro · 15h00</p>
-          <p class="details-text">
-            Chegue alguns minutos antes para se acomodar com calma e aproveitar cada momento.
-          </p>
-        </div>
+        <DetailsCard
+          data-reveal
+          title="Data &amp; Horário"
+          highlight="3 de Outubro · 15h00"
+          text="Chegue alguns minutos antes para se acomodar com calma e aproveitar cada momento."
+          icon="⏰"
+        />
 
-        <div class="details-card" data-reveal>
-          <div class="details-icon">
-            <span class="icon-circle">⛪</span>
-          </div>
-          <h3>Cerimônia</h3>
-          <p class="details-highlight">Igreja Matriz de Pacatuba</p>
-          <p class="details-text">
-            Pacatuba - CE<br />
-            Um cenário especial para testemunhar o nosso “sim”.
-          </p>
-        </div>
+        <DetailsCard
+          data-reveal
+          title="Cerimônia"
+          highlight="Igreja Matriz de Pacatuba"
+          text="Pacatuba - CE | Um cenário especial para testemunhar o nosso “sim”."
+          icon="⛪"
+        />
 
-        <div class="details-card details-card--highlight" data-reveal>
-          <div class="details-icon">
-            <span class="icon-circle icon-circle--olive">👗</span>
-          </div>
-          <h3>Vestimenta</h3>
-          <p class="details-highlight">Tons terrosos &amp; verde oliva</p>
-          <p class="details-text">
-            Traje passeio completo em cores suaves que conversem com terracota, nude e verde oliva.
-          </p>
-        </div>
+        <DetailsCard
+          isOlive
+          data-reveal
+          title="Vestimenta"
+          highlight="Tons terrosos &amp; verde oliva"
+          text="Traje passeio completo em cores suaves que conversem com terracota, nude e verde oliva."
+          icon="👗"
+        />
 
-        <div class="details-card" data-reveal>
-          <div class="details-icon">
-            <span class="icon-circle">❤</span>
-          </div>
-          <h3>Confirmação de presença</h3>
-          <p class="details-highlight">Em breve</p>
-          <p class="details-text">
-            Em breve colocaremos aqui o link para você confirmar sua presença e deixar tudo ainda mais especial.
-          </p>
-        </div>
+        <DetailsCard
+          data-reveal
+          title="Confirmação de presença"
+          highlight="Em breve"
+          text="Em breve colocaremos aqui o link para você confirmar sua presença e deixar tudo ainda mais especial."
+          icon="❤"
+        />
       </div>
     </section>
   </q-page>
@@ -91,6 +79,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
+import DetailsCard from '../components/detailsCard.vue';
 
 const detailsSection = ref<HTMLElement | null>(null);
 const revealElements = ref<HTMLElement[]>([]);
