@@ -87,52 +87,6 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.scroll-indicator {
-  position: absolute;
-  left: 50%;
-  bottom: 32px;
-  transform: translateX(-50%);
-  background: transparent;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  color: #fbe1cf;
-  cursor: pointer;
-  font-size: 0.78rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.scroll-indicator__circle {
-  width: 32px;
-  height: 48px;
-  border-radius: 999px;
-  border: 1px solid rgba(248, 213, 192, 0.8);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 8px;
-  box-sizing: border-box;
-  position: relative;
-}
-
-.scroll-indicator__arrow {
-  align-self: end;
-  margin-bottom: 8px;
-  width: 8px;
-  height: 14px;
-  border-radius: 999px;
-  background-color: rgba(248, 213, 192, 0.9);
-  animation: scrollDot 1.4s ease-in-out infinite;
-}
-
-.scroll-indicator__text {
-  font-size: 0.7rem;
-  opacity: 0.85;
-}
-
 @keyframes scrollDot {
   0% {
     transform: translateY(0);

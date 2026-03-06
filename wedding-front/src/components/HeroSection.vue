@@ -99,7 +99,7 @@ defineEmits([
 
 .hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: 2.8rem;
+  font-size: 3.4rem;
   letter-spacing: 0.08em;
   margin-bottom: 12px;
 }
@@ -165,6 +165,8 @@ defineEmits([
   align-items: flex-start;
   justify-content: center;
   padding-top: 8px;
+  box-sizing: border-box;
+  position: relative;
 }
 
 .scroll-indicator__arrow {
@@ -175,6 +177,11 @@ defineEmits([
   border-radius: 999px;
   background-color: rgba(248, 213, 192, 0.9);
   animation: scrollDot 1.4s ease-in-out infinite;
+}
+
+.scroll-indicator__text {
+  font-size: 0.7rem;
+  opacity: 0.85;
 }
 
 @keyframes scrollDot {
