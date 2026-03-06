@@ -99,9 +99,8 @@ defineEmits([
 
 .hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: 3.4rem;
+  font-size: 3.0rem;
   letter-spacing: 0.08em;
-  margin-bottom: 12px;
 }
 
 .hero-date {
