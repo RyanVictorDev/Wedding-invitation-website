@@ -1,90 +1,22 @@
 <template>
   <q-page class="wedding-page">
-    <div class="wedding-hero">
-      <div class="overlay">
-        <div class="hero-content">
-          <p class="hero-subtitle" data-reveal data-reveal-order="1">Convite de casamento</p>
-          <h1 class="hero-title" data-reveal data-reveal-order="2">Clara &amp; Ryan</h1>
-          <p class="hero-date" data-reveal data-reveal-order="3">3 de Outubro, às 15h00</p>
-          <p class="hero-location" data-reveal data-reveal-order="4">Igreja Matriz de Pacatuba</p>
-          <p class="hero-phrase" data-reveal data-reveal-order="5">
-            “O amor é a melhor de todas as viagens. Queremos você ao nosso lado nesse dia.”
-          </p>
-          <q-btn
-            class="hero-cta"
-            label="Confirmar presença"
-            unelevated
-            @click="openPresenceModal"
-            data-reveal
-            data-reveal-order="7"
-          />
-        </div>
-      </div>
-      <button class="scroll-indicator" @click="scrollToDetails" aria-label="Rolar para detalhes">
-        <span class="scroll-indicator__circle">
-          <span class="scroll-indicator__arrow"></span>
-        </span>
-        <span class="scroll-indicator__text">Role para ver mais</span>
-      </button>
-    </div>
+    <HeroSection
+      @open-presence="openPresenceModal"
+      @scroll-details="scrollToDetails"
+    />
 
-    <section ref="detailsSection" class="details-section">
-      <div class="details-header" data-reveal>
-        <p class="details-kicker">Celebração</p>
-        <h2 class="details-title">Detalhes do grande dia</h2>
-        <div class="details-divider">
-          <span class="line"></span>
-          <span class="heart">✧</span>
-          <span class="line"></span>
-        </div>
-      </div>
-
-      <div class="details-grid">
-        <DetailsCard
-          data-reveal
-          title="Data &amp; Horário"
-          highlight="3 de Outubro · 15h00"
-          text="Chegue alguns minutos antes para se acomodar com calma e aproveitar cada momento."
-          icon="⏰"
-        />
-
-        <DetailsCard
-          data-reveal
-          title="Cerimônia"
-          highlight="Igreja Matriz de Pacatuba"
-          text="Pacatuba - CE | Um cenário especial para testemunhar o nosso “sim”."
-          icon="⛪"
-        />
-
-        <DetailsCard
-          isOlive
-          data-reveal
-          title="Vestimenta"
-          highlight="Tons terrosos &amp; verde oliva"
-          text="Traje passeio completo em cores suaves que conversem com terracota, nude e verde oliva."
-          icon="👗"
-        />
-
-        <DetailsCard
-          data-reveal
-          title="Confirmação de presença"
-          highlight="Em breve"
-          text="Em breve colocaremos aqui o link para você confirmar sua presença e deixar tudo ainda mais especial."
-          icon="❤"
-        />
-      </div>
-    </section>
+    <WeddingDetails ref="detailsComponent" />
   </q-page>
   <PresenceConfirmation ref="presenceModal" />
 </template>
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue';
-import DetailsCard from '../components/detailsCard.vue';
 import PresenceConfirmation from 'src/components/presenceConfirmation.vue';
+import WeddingDetails from 'src/components/WeddingDetails.vue';
+import HeroSection from 'src/components/HeroSection.vue'
 
-
-const detailsSection = ref<HTMLElement | null>(null);
+const detailsComponent = ref<InstanceType<typeof WeddingDetails> | null>(null)
 const revealElements = ref<HTMLElement[]>([]);
 let observer: IntersectionObserver | null = null;
 
@@ -95,7 +27,7 @@ function openPresenceModal () {
 }
 
 function scrollToDetails () {
-  detailsSection.value?.scrollIntoView({ behavior: 'smooth' });
+  detailsComponent.value?.scrollToSection()
 }
 
 onMounted(() => {
@@ -140,17 +72,6 @@ onBeforeUnmount(() => {
 
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@500;600&display=swap');
 
-.wedding-hero {
-  position: relative;
-  min-height: 100vh;
-  background-image: url('../assets/background.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  margin-top: -64px;
-  padding-top: 64px;
-}
-
 .overlay {
   position: absolute;
   inset: 0;
@@ -164,62 +85,6 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 48px 16px;
   box-sizing: border-box;
-}
-
-.hero-content {
-  max-width: 640px;
-  text-align: center;
-  color: #fff3eb;
-}
-
-.hero-subtitle {
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  font-size: 0.8rem;
-  margin-bottom: 12px;
-  color: #f3d5c4;
-}
-
-.hero-title {
-  font-family: 'Playfair Display', 'Cormorant Garamond', 'Times New Roman', serif;
-  font-size: 2.8rem;
-  letter-spacing: 0.08em;
-  margin-bottom: 12px;
-}
-
-.hero-date {
-  font-size: 1.1rem;
-  margin-bottom: 4px;
-  color: #fbe1cf;
-}
-
-.hero-location {
-  font-size: 1rem;
-  margin-bottom: 20px;
-  color: #f8d5c0;
-}
-
-.hero-phrase {
-  font-size: 0.95rem;
-  margin-bottom: 32px;
-  color: #ffece0;
-  font-style: italic;
-}
-
-.hero-cta {
-  background: linear-gradient(135deg, #6b7a3a, #87964b);
-  color: #fdfaf4 !important;
-  padding: 10px 28px;
-  border-radius: 999px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.hero-cta:hover {
-  background: linear-gradient(135deg, #5a6a30, #76853e);
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(65, 80, 35, 0.35);
 }
 
 .scroll-indicator {
@@ -266,115 +131,6 @@ onBeforeUnmount(() => {
 .scroll-indicator__text {
   font-size: 0.7rem;
   opacity: 0.85;
-}
-
-.details-section {
-  background: #fdf3ec;
-  padding: 64px 16px 88px;
-}
-
-.details-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.details-kicker {
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: 0.78rem;
-  color: #c86b5a;
-  margin-bottom: 10px;
-}
-
-.details-title {
-  font-family: 'Playfair Display', 'Cormorant Garamond', serif;
-  font-size: 2.1rem;
-  color: #5a332d;
-  margin-bottom: 12px;
-}
-
-.details-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.details-divider .line {
-  width: 52px;
-  height: 1px;
-  background: linear-gradient(to right, #e0b79c, #c86b5a);
-}
-
-.details-divider .heart {
-  font-size: 0.9rem;
-  color: #c86b5a;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 22px;
-}
-
-.details-card {
-  background-color: #ffffff;
-  border-radius: 18px;
-  padding: 22px 20px;
-  box-shadow: 0 10px 24px rgba(88, 43, 34, 0.1);
-  border: 1px solid rgba(200, 107, 90, 0.18);
-  position: relative;
-  overflow: hidden;
-}
-
-.details-grid .details-card:nth-child(1) {
-  transition-delay: 60ms;
-}
-.details-grid .details-card:nth-child(2) {
-  transition-delay: 120ms;
-}
-.details-grid .details-card:nth-child(3) {
-  transition-delay: 180ms;
-}
-.details-grid .details-card:nth-child(4) {
-  transition-delay: 240ms;
-}
-
-[data-reveal] {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 700ms ease-out,
-    transform 700ms ease-out;
-}
-
-[data-reveal].is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-[data-reveal-order="1"] {
-  transition-delay: 40ms;
-}
-
-[data-reveal-order="2"] {
-  transition-delay: 120ms;
-}
-
-[data-reveal-order="3"] {
-  transition-delay: 200ms;
-}
-
-[data-reveal-order="4"] {
-  transition-delay: 260ms;
-}
-
-[data-reveal-order="5"] {
-  transition-delay: 320ms;
-}
-
-[data-reveal-order="6"] {
-  transition-delay: 380ms;
 }
 
 @keyframes scrollDot {
