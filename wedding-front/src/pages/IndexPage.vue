@@ -6,6 +6,8 @@
     />
 
     <WeddingDetails ref="detailsComponent" />
+
+    <MessageSection />
   </q-page>
   <PresenceConfirmation ref="presenceModal" />
 </template>
@@ -15,6 +17,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
 import PresenceConfirmation from 'src/components/presenceConfirmation.vue';
 import WeddingDetails from 'src/components/WeddingDetails.vue';
 import HeroSection from 'src/components/HeroSection.vue'
+import MessageSection from 'src/components/MessageSection.vue';
 
 const detailsComponent = ref<InstanceType<typeof WeddingDetails> | null>(null)
 const revealElements = ref<HTMLElement[]>([]);
