@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public final class MessageDtos {
 
@@ -35,6 +36,15 @@ public final class MessageDtos {
                     message.getCreatedAt()
             );
         }
+    }
+
+    public record PagedMessagesResponse(
+            List<MessageResponse> content,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {
     }
 }
 

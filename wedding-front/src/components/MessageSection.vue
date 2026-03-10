@@ -13,6 +13,16 @@
 
     <div class="d-flex justify-center">
       <div class="message-card q-pa-md q-pa-xl-md">
+        <div class="message-name-row">
+          <q-input
+            v-model="authorName"
+            label="Seu nome (opcional)"
+            outlined
+            dense
+            class="message-name-input"
+          />
+        </div>
+
         <q-editor
           v-model="editor"
           min-height="12rem"
@@ -55,6 +65,7 @@ import { api } from 'src/boot/axios'
 
 const detailsSection = ref<HTMLElement | null>(null)
 const editor = ref('')
+const authorName = ref('')
 const saving = ref(false)
 const success = ref(false)
 const error = ref(false)
@@ -70,10 +81,12 @@ async function submitMessage () {
 
   try {
     await api.post('/messages', {
-      content: editor.value
+      content: editor.value,
+      authorName: authorName.value || null
     })
     success.value = true
     editor.value = ''
+    authorName.value = ''
   } catch (e) {
     console.error('Erro ao salvar recado', e)
     error.value = true
@@ -115,6 +128,16 @@ defineExpose({
 .message-header {
   text-align: center;
   margin-bottom: 40px;
+}
+
+.message-name-row {
+  margin-bottom: 12px;
+}
+
+.message-name-input {
+  .q-field__control {
+    border-radius: 999px;
+  }
 }
 
 .message-kicker {

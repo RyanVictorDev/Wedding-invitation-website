@@ -2,6 +2,7 @@ package com.wedding.backend.message.api;
 
 import com.wedding.backend.message.api.MessageDtos.CreateMessageRequest;
 import com.wedding.backend.message.api.MessageDtos.MessageResponse;
+import com.wedding.backend.message.api.MessageDtos.PagedMessagesResponse;
 import com.wedding.backend.message.model.Message;
 import com.wedding.backend.message.service.MessageService;
 import jakarta.validation.Valid;
@@ -23,6 +24,14 @@ public class MessageController {
     public MessageResponse createMessage(@Valid @RequestBody CreateMessageRequest request) {
         Message message = messageService.createMessage(request);
         return MessageResponse.fromEntity(message);
+    }
+
+    @GetMapping
+    public PagedMessagesResponse listMessages(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return messageService.listMessages(page, size);
     }
 }
 

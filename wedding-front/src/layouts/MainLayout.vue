@@ -1,6 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf" class="root-layout">
     <q-header
+      v-if="!isDashboard"
       :class="['header', { 'header--scrolled': isScrolled }]"
     >
       <q-toolbar class="toolbar">
@@ -25,11 +26,14 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 const router = useRouter();
+const route = useRoute();
 const isScrolled = ref(false);
+
+const isDashboard = computed(() => route.path.endsWith('/dashboard'));
 
 function handleScroll () {
   isScrolled.value = window.scrollY > 10;
