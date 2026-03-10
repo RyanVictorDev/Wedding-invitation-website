@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: wedding-backend
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/wedding}
+    username: ${DB_USERNAME:wedding}
+    password: ${DB_PASSWORD:wedding}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+    show-sql: false
+
+abacatepay:
+  base-url: ${ABACATEPAY_BASE_URL:https://api.abacatepay.com}
+  api-key: ${ABACATEPAY_API_KEY}
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:9000}
+

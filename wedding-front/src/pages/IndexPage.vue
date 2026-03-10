@@ -7,6 +7,8 @@
 
     <WeddingDetails ref="detailsComponent" />
 
+    <PaymentSection />
+
     <MessageSection />
   </q-page>
   <PresenceConfirmation ref="presenceModal" />
@@ -18,6 +20,7 @@ import PresenceConfirmation from 'src/components/presenceConfirmation.vue';
 import WeddingDetails from 'src/components/WeddingDetails.vue';
 import HeroSection from 'src/components/HeroSection.vue'
 import MessageSection from 'src/components/MessageSection.vue';
+import PaymentSection from 'src/components/PaymentSection.vue';
 
 const detailsComponent = ref<InstanceType<typeof WeddingDetails> | null>(null)
 const revealElements = ref<HTMLElement[]>([]);
