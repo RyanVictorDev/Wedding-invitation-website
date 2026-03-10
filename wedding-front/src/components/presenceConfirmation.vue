@@ -15,16 +15,23 @@
       </q-card-section>
 
       <q-card-section class="select-section">
-        <q-select
-          v-model="selectedGuests"
-          :options="guests"
-          label="Selecione os convidados"
-          multiple
-          use-chips
-          stack-label
+        <q-input
+          v-model="newGuest"
+          label="Nome do convidado"
           outlined
-          class="guest-select"
-        />
+          dense
+          class="guest-input"
+          @keyup.enter="addGuest"
+        >
+          <template #append>
+            <q-btn
+              flat
+              dense
+              icon="send"
+              @click="addGuest"
+            />
+          </template>
+        </q-input>
       </q-card-section>
 
       <q-card-section
@@ -49,9 +56,11 @@
       <q-card-actions class="actions">
         <q-btn
           unelevated
+          :loading="saving"
+          :disable="!selectedGuests.length"
           label="Confirmar"
-          v-close-popup
           class="confirm-btn"
+          @click="confirmPresence"
         />
       </q-card-actions>
 
@@ -61,15 +70,47 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { api } from 'src/boot/axios'
 
 const dialog = ref(false)
 
-const guests = [
-  'Pedro Mota',
-  'Ana Sara'
-]
-
+const newGuest = ref('')
 const selectedGuests = ref<string[]>([])
+const saving = ref(false)
+
+function addGuest () {
+  const name = newGuest.value.trim()
+  if (!name) return
+  if (!selectedGuests.value.includes(name)) {
+    selectedGuests.value.push(name)
+  }
+  newGuest.value = ''
+}
+
+async function confirmPresence () {
+  if (!selectedGuests.value.length) {
+    return
+  }
+
+  saving.value = true
+
+  try {
+    await api.post('/guests/confirm', {
+      guests: selectedGuests.value.map(name => ({
+        name
+        // godparent: false por padrão no backend
+      }))
+    })
+
+    dialog.value = false
+    selectedGuests.value = []
+    newGuest.value = ''
+  } catch (e) {
+    console.error('Erro ao confirmar presença', e)
+  } finally {
+    saving.value = false
+  }
+}
 
 function open () {
   dialog.value = true
@@ -126,7 +167,7 @@ defineExpose({
   padding-top: 8px;
 }
 
-.guest-select {
+.guest-input {
   .q-field__control {
     border-radius: 12px;
   }
