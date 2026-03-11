@@ -45,11 +45,6 @@ import { ref } from 'vue';
   overflow: hidden;
 }
 
-.details-card--highlight {
-  border-color: rgba(107, 122, 58, 0.6);
-  background: linear-gradient(135deg, #ffffff, #f4f7ec);
-}
-
 .details-icon {
   margin-bottom: 10px;
 }
@@ -76,7 +71,7 @@ import { ref } from 'vue';
 
 .details-card--highlight {
   border-color: rgba(107, 122, 58, 0.6);
-  background: linear-gradient(135deg, #ffffff, #f4f7ec);
+  background: linear-gradient(135deg, #ffffff, #fdfffa);
 }
 
 .icon-circle {

@@ -15,222 +15,45 @@
       </div>
 
       <div v-else>
-        <div class="row q-col-gutter-lg">
-          <div class="col-12 col-md-3">
-            <div class="stat-card">
-              <div class="stat-label">Convidados</div>
-              <div class="stat-value">{{ summary?.totalGuests ?? 0 }}</div>
-            </div>
-          </div>
+        <DashboardStatsSection
+          :summary="summary"
+          :formatted-total-payments="formattedTotalPayments"
+          :formatted-paid-total="formattedPaidTotal"
+          :formatted-pending-total="formattedPendingTotal"
+        />
 
-          <div class="col-12 col-md-3">
-            <div class="stat-card">
-              <div class="stat-label">Confirmados</div>
-              <div class="stat-value text-positive">{{ summary?.confirmedGuests ?? 0 }}</div>
-            </div>
-          </div>
+        <DashboardGuestSection
+          :rows="guestRows"
+          :loading="guestsLoading"
+          :page="guestPage"
+          :total-pages="guestTotalPages"
+          :search="guestSearch"
+          :filter="guestFilter"
+          :format-date-time="formatDateTime"
+          @update:page="value => { guestPage = value }"
+          @update:filter="value => { guestFilter = value }"
+          @search="handleGuestSearch"
+        />
 
-          <div class="col-12 col-md-3">
-            <div class="stat-card">
-              <div class="stat-label">Não confirmados</div>
-              <div class="stat-value text-negative">{{ summary?.unconfirmedGuests ?? 0 }}</div>
-            </div>
-          </div>
-
-          <div class="col-12 col-md-3">
-            <div class="stat-card">
-              <div class="stat-label">Padrinhos / Madrinhas</div>
-              <div class="stat-value">{{ summary?.godparents ?? 0 }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row q-col-gutter-lg q-mt-lg">
-          <div class="col-12 col-md-4">
-            <div class="stat-card stat-card--highlight">
-              <div class="stat-label">Total recebido (pagos)</div>
-              <div class="stat-value">
-                R$ {{ formattedPaidTotal }}
-              </div>
-              <div class="stat-sub">
-                {{ summary?.paidPaymentsCount ?? 0 }} pagamentos pagos
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12 col-md-4">
-            <div class="stat-card">
-              <div class="stat-label">Pagamentos pendentes</div>
-              <div class="stat-value">
-                R$ {{ formattedPendingTotal }}
-              </div>
-              <div class="stat-sub">
-                {{ summary?.pendingPaymentsCount ?? 0 }} pagamentos pendentes
-              </div>
-            </div>
-          </div>
-
-          <div class="col-12 col-md-4">
-            <div class="stat-card">
-              <div class="stat-label">Total geral (todos pagamentos)</div>
-              <div class="stat-value">
-                R$ {{ formattedTotalPayments }}
-              </div>
-              <div class="stat-sub">
-                {{ summary?.totalPaymentsCount ?? 0 }} pagamentos no total
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="q-mt-xl">
-          <div class="section-header">
-            <h2 class="section-title">Lista de convidados</h2>
-            <div class="section-subtitle">
-              Quem já confirmou presença e quem ainda não.
-            </div>
-          </div>
-
-          <q-table
-            v-if="guestRows.length"
-            flat
-            bordered
-            :rows="guestRows"
-            :columns="columns"
-            row-key="id"
-            hide-bottom
-            class="guest-table"
-          >
-            <template #body-cell-confirmed="props">
-              <q-td :props="props">
-                <q-chip
-                  :color="props.row.confirmed ? 'positive' : 'grey-6'"
-                  text-color="white"
-                  dense
-                  square
-                >
-                  {{ props.row.confirmed ? 'Confirmado' : 'Não confirmado' }}
-                </q-chip>
-              </q-td>
-            </template>
-
-            <template #body-cell-godparent="props">
-              <q-td :props="props">
-                <q-chip
-                  v-if="props.row.godparent"
-                  color="orange-7"
-                  text-color="white"
-                  dense
-                  square
-                >
-                  Padrinho / Madrinha
-                </q-chip>
-                <span v-else>Não</span>
-              </q-td>
-            </template>
-
-            <template #body-cell-confirmationDate="props">
-              <q-td :props="props">
-                <span v-if="props.row.confirmationDate">
-                  {{ formatDateTime(props.row.confirmationDate) }}
-                </span>
-                <span v-else>—</span>
-              </q-td>
-            </template>
-          </q-table>
-
-          <div v-else class="text-center q-mt-md text-grey-7">
-            Nenhum convidado cadastrado ainda.
-          </div>
-        </div>
-
-        <div class="q-mt-xl">
-          <div class="section-header">
-            <h2 class="section-title">Recados</h2>
-            <div class="section-subtitle">
-              Mensagens deixadas pelos convidados.
-            </div>
-          </div>
-
-          <div v-if="messagesLoading" class="text-center q-my-md">
-            <q-spinner size="2em" color="primary" />
-          </div>
-
-          <div v-else>
-            <div
-              v-if="messages.length"
-              class="messages-list"
-            >
-              <div
-                v-for="msg in messages"
-                :key="msg.id"
-                class="message-card"
-              >
-                <div class="message-header-row">
-                  <div class="message-author">
-                    {{ msg.authorName || 'Convidado' }}
-                  </div>
-                  <div class="message-date">
-                    {{ formatDateTime(msg.createdAt) }}
-                  </div>
-                </div>
-                <div
-                  class="message-content"
-                  v-html="msg.content"
-                />
-              </div>
-
-              <div class="messages-pagination q-mt-md">
-                <q-btn
-                  round
-                  unelevated
-                  color="white"
-                  text-color="brown-7"
-                  icon="chevron_left"
-                  :disable="messagesPage === 1 || messagesLoading"
-                  @click="handlePrevMessages"
-                />
-
-                <div class="messages-page-numbers">
-                  <q-btn
-                    v-for="page in messagesTotalPages"
-                    :key="page"
-                    :label="page"
-                    outline
-                    rounded
-                    color="brown-5"
-                    class="messages-page-number"
-                    :class="{ 'messages-page-number--active': page === messagesPage }"
-                    :disable="messagesLoading"
-                    @click="handleGoToMessagesPage(page)"
-                  />
-                </div>
-
-                <q-btn
-                  round
-                  unelevated
-                  color="white"
-                  text-color="brown-7"
-                  icon="chevron_right"
-                  :disable="messagesPage >= messagesTotalPages || messagesLoading"
-                  @click="handleNextMessages"
-                />
-              </div>
-            </div>
-
-            <div v-else class="text-center q-mt-md text-grey-7">
-              Nenhum recado enviado ainda.
-            </div>
-          </div>
-        </div>
+        <DashboardMessagesSection
+          :messages="messages"
+          :loading="messagesLoading"
+          :page="messagesPage"
+          :total-pages="messagesTotalPages"
+          :format-date-time="formatDateTime"
+          @update:page="value => { messagesPage = value }"
+        />
       </div>
     </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { api } from 'src/boot/axios'
+import DashboardStatsSection from 'components/dashboard/DashboardStatsSection.vue'
+import DashboardGuestSection from 'components/dashboard/DashboardGuestSection.vue'
+import DashboardMessagesSection from 'components/dashboard/DashboardMessagesSection.vue'
 
 interface GuestSummary {
   id: number
@@ -254,6 +77,14 @@ interface DashboardSummaryResponse {
   guests: GuestSummary[]
 }
 
+interface PagedGuestsResponse {
+  content: GuestSummary[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
 interface Message {
   id: number
   content: string
@@ -272,14 +103,13 @@ interface PagedMessagesResponse {
 const loading = ref(true)
 const summary = ref<DashboardSummaryResponse | null>(null)
 
-const columns = [
-  { name: 'name', label: 'Nome', field: 'name', align: 'left' as const },
-  { name: 'confirmed', label: 'Presença', field: 'confirmed', align: 'left' as const },
-  { name: 'godparent', label: 'Padrinho/Madrinha', field: 'godparent', align: 'left' as const },
-  { name: 'confirmationDate', label: 'Data de confirmação', field: 'confirmationDate', align: 'left' as const }
-]
-
-const guestRows = computed(() => summary.value?.guests ?? [])
+const guestSearch = ref('')
+const guestFilter = ref<'all' | 'yes' | 'no'>('all')
+const guestPage = ref(1)
+const guestPageSize = ref(10)
+const guestRows = ref<GuestSummary[]>([])
+const guestsLoading = ref(false)
+const guestTotalPages = ref(1)
 
 const formattedTotalPayments = computed(() => {
   const value = summary.value?.totalPayments ?? 0
@@ -318,6 +148,35 @@ async function loadSummary () {
   }
 }
 
+async function loadGuests () {
+  guestsLoading.value = true
+  try {
+    const page = guestPage.value - 1
+    const size = guestPageSize.value
+
+    const params: Record<string, unknown> = { page, size }
+
+    if (guestSearch.value.trim()) {
+      params.search = guestSearch.value.trim()
+    }
+
+    if (guestFilter.value !== 'all') {
+      params.status = guestFilter.value
+    }
+
+    const { data } = await api.get<PagedGuestsResponse>('/guests', {
+      params
+    })
+
+    guestRows.value = data.content
+    guestTotalPages.value = data.totalPages || 1
+  } catch (e) {
+    console.error('Erro ao carregar convidados', e)
+  } finally {
+    guestsLoading.value = false
+  }
+}
+
 async function loadMessages () {
   messagesLoading.value = true
   try {
@@ -335,27 +194,29 @@ async function loadMessages () {
   }
 }
 
-function handlePrevMessages () {
-  if (messagesPage.value === 1 || messagesLoading.value) return
-  messagesPage.value -= 1
-  void loadMessages()
+function handleGuestSearch (term: string) {
+  guestSearch.value = term
+  guestPage.value = 1
+  void loadGuests()
 }
 
-function handleNextMessages () {
-  if (messagesPage.value >= messagesTotalPages.value || messagesLoading.value) return
-  messagesPage.value += 1
-  void loadMessages()
-}
+watch(guestFilter, () => {
+  guestPage.value = 1
+  void loadGuests()
+})
 
-function handleGoToMessagesPage (page: number) {
-  if (page === messagesPage.value || messagesLoading.value) return
-  messagesPage.value = page
+watch(guestPage, () => {
+  void loadGuests()
+})
+
+watch(messagesPage, () => {
   void loadMessages()
-}
+})
 
 onMounted(() => {
   void loadSummary()
   void loadMessages()
+  void loadGuests()
 })
 </script>
 
@@ -397,37 +258,6 @@ onMounted(() => {
   color: #5a332d;
 }
 
-.stat-card {
-  background: #fff9f4;
-  border-radius: 14px;
-  padding: 14px 16px;
-  border: 1px solid rgba(200, 107, 90, 0.18);
-}
-
-.stat-card--highlight {
-  background: linear-gradient(135deg, #f4f7ec, #fff9f4);
-}
-
-.stat-label {
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  color: #a2503b;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 1.6rem;
-  font-weight: 600;
-  color: #5a332d;
-}
-
-.stat-sub {
-  margin-top: 4px;
-  font-size: 0.85rem;
-  color: #6b7a3a;
-}
-
 .section-header {
   margin-bottom: 8px;
 }
@@ -447,6 +277,10 @@ onMounted(() => {
   margin-top: 8px;
   border-radius: 14px;
   overflow: hidden;
+}
+
+.guest-filters {
+  align-items: center;
 }
 
 .messages-list {
@@ -504,6 +338,15 @@ onMounted(() => {
 
 .messages-page-number--active {
   font-weight: 600;
+  background-color: #6b7a3a;
+  color: #fdfaf4;
+  border-radius: 999px;
+}
+
+.messages-page-indicator {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #7b5a4c;
 }
 </style>
 

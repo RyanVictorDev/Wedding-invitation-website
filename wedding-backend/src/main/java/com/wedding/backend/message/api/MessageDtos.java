@@ -17,8 +17,11 @@ public final class MessageDtos {
             @Size(max = 10000)
             String content,
 
-            @Size(max = 150)
-            String authorName
+            @Size(max = 200)
+            String authorName,
+
+            @Size(max = 200)
+            String website
     ) {
     }
 

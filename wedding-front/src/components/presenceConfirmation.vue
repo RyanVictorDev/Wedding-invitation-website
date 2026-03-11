@@ -35,21 +35,53 @@
       </q-card-section>
 
       <q-card-section
-        v-if="selectedGuests.length"
+        v-if="confirmedGuests.length || notGoingGuests.length"
         class="confirmed-section"
       >
-        <div class="confirmed-title">
-          Confirmados
-        </div>
-
-        <div class="guest-list">
-          <span
-            v-for="guest in selectedGuests"
-            :key="guest"
-            class="guest-chip"
+        <div class="lists-container">
+          <div
+            class="guest-list-column"
+            @dragover.prevent
+            @drop="handleDrop('yes')"
           >
-            {{ guest }}
-          </span>
+            <div class="confirmed-title">
+              Confirmados
+            </div>
+
+            <div class="guest-list">
+              <span
+                v-for="guest in confirmedGuests"
+                :key="`yes-${guest}`"
+                class="guest-chip guest-chip--yes"
+                draggable="true"
+                @dragstart="handleDragStart(guest, 'yes')"
+              >
+                {{ guest }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            class="guest-list-column"
+            @dragover.prevent
+            @drop="handleDrop('no')"
+          >
+            <div class="confirmed-title">
+              Não poderão ir
+            </div>
+
+            <div class="guest-list">
+              <span
+                v-for="guest in notGoingGuests"
+                :key="`no-${guest}`"
+                class="guest-chip guest-chip--no"
+                draggable="true"
+                @dragstart="handleDragStart(guest, 'no')"
+              >
+                {{ guest }}
+              </span>
+            </div>
+          </div>
         </div>
       </q-card-section>
 
@@ -57,7 +89,7 @@
         <q-btn
           unelevated
           :loading="saving"
-          :disable="!selectedGuests.length"
+          :disable="!confirmedGuests.length && !notGoingGuests.length"
           label="Confirmar"
           class="confirm-btn"
           @click="confirmPresence"
@@ -75,20 +107,52 @@ import { api } from 'src/boot/axios'
 const dialog = ref(false)
 
 const newGuest = ref('')
-const selectedGuests = ref<string[]>([])
+const confirmedGuests = ref<string[]>([])
+const notGoingGuests = ref<string[]>([])
 const saving = ref(false)
+
+const draggingName = ref<string | null>(null)
+const draggingFrom = ref<'yes' | 'no' | null>(null)
 
 function addGuest () {
   const name = newGuest.value.trim()
   if (!name) return
-  if (!selectedGuests.value.includes(name)) {
-    selectedGuests.value.push(name)
+  if (!confirmedGuests.value.includes(name) && !notGoingGuests.value.includes(name)) {
+    confirmedGuests.value.push(name)
   }
   newGuest.value = ''
 }
 
+function handleDragStart (name: string, from: 'yes' | 'no') {
+  draggingName.value = name
+  draggingFrom.value = from
+}
+
+function handleDrop (target: 'yes' | 'no') {
+  if (!draggingName.value || !draggingFrom.value || draggingFrom.value === target) {
+    draggingName.value = null
+    draggingFrom.value = null
+    return
+  }
+
+  const fromList = draggingFrom.value === 'yes' ? confirmedGuests.value : notGoingGuests.value
+  const toList = target === 'yes' ? confirmedGuests.value : notGoingGuests.value
+
+  const idx = fromList.indexOf(draggingName.value)
+  if (idx !== -1) {
+    fromList.splice(idx, 1)
+    if (!toList.includes(draggingName.value)) {
+      toList.push(draggingName.value)
+    }
+  }
+
+  draggingName.value = null
+  draggingFrom.value = null
+}
+
 async function confirmPresence () {
-  if (!selectedGuests.value.length) {
+  const allGuests = [...confirmedGuests.value, ...notGoingGuests.value]
+  if (!allGuests.length) {
     return
   }
 
@@ -96,14 +160,15 @@ async function confirmPresence () {
 
   try {
     await api.post('/guests/confirm', {
-      guests: selectedGuests.value.map(name => ({
-        name
-        // godparent: false por padrão no backend
-      }))
+      guests: [
+        ...confirmedGuests.value.map(name => ({ name, willAttend: true })),
+        ...notGoingGuests.value.map(name => ({ name, willAttend: false }))
+      ]
     })
 
     dialog.value = false
-    selectedGuests.value = []
+    confirmedGuests.value = []
+    notGoingGuests.value = []
     newGuest.value = ''
   } catch (e) {
     console.error('Erro ao confirmar presença', e)
@@ -172,9 +237,18 @@ defineExpose({
     border-radius: 12px;
   }
 }
-
 .confirmed-section {
   padding-top: 4px;
+}
+
+.lists-container {
+  display: flex;
+  gap: 16px;
+}
+
+.guest-list-column {
+  flex: 1;
+  min-width: 0;
 }
 
 .confirmed-title {
@@ -192,15 +266,24 @@ defineExpose({
 }
 
 .guest-chip {
-  background: linear-gradient(135deg, #6b7a3a00, #87964b00);
-  color: #fdfaf4;
   font-size: 0.8rem;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid #6b7a3a;
-  color: #6b7a3a;
   font-weight: 500;
   letter-spacing: 0.04em;
+  cursor: grab;
+}
+
+.guest-chip--yes {
+  background: #e6f4e8;
+  color: #295b31;
+  border: 1px solid #a2d6a4;
+}
+
+.guest-chip--no {
+  background: #fdecea;
+  color: #8a1c1c;
+  border: 1px solid #f5b5b5;
 }
 
 .actions {

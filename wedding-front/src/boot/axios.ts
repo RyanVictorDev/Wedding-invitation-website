@@ -18,6 +18,11 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 });
 
+// Lightweight health check on startup (non-blocking)
+void api.get('/health').catch((err) => {
+  console.warn('API health check failed', err);
+});
+
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 

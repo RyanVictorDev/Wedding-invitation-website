@@ -13,6 +13,7 @@
 
     <div class="details-grid">
       <DetailsCard
+        isOlive
         data-reveal
         title="Data & Horário"
         highlight="3 de Outubro · 15h00"
@@ -40,9 +41,30 @@
       <DetailsCard
         data-reveal
         title="Confirmação de presença"
-        highlight="Em breve"
-        text="Em breve colocaremos aqui o link para você confirmar sua presença e deixar tudo ainda mais especial."
+        highlight="Confirme diretamente pelo site"
+        text="Use o botão de confirmação na parte superior da página para informar quem poderá ir e quem não poderá. Você também pode deixar um recado carinhoso para nós."
         icon="❤"
+      />
+
+      <DetailsCard
+        isOlive
+        data-reveal
+        class="details-card-link"
+        title="Presenteie os noivos"
+        highlight="Pagamento totalmente opcional"
+        text="Se quiser, você pode nos presentear com qualquer valor na seção “Presenteie os noivos”. O presente em dinheiro é apenas uma forma de carinho a mais – completamente opcional."
+        icon="🎁"
+        @click="emit('go-payments')"
+      />
+
+      <DetailsCard
+        data-reveal
+        class="details-card-link"
+        title="Recadinhos carinhosos"
+        highlight="Deixe seu recado sem pagar nada"
+        text="Logo abaixo da área de presentes, você encontra a seção “Deixe um recado”. Ali você pode escrever algo especial para nós – não é necessário fazer nenhum pagamento para enviar seu recadinho."
+        icon="💌"
+        @click="emit('go-messages')"
       />
     </div>
   </section>
@@ -53,6 +75,11 @@ import { ref } from 'vue'
 import DetailsCard from './detailsCard.vue'
 
 const detailsSection = ref<HTMLElement | null>(null)
+
+const emit = defineEmits<{
+  (e: 'go-payments'): void
+  (e: 'go-messages'): void
+}>()
 
 function scrollToSection () {
   detailsSection.value?.scrollIntoView({ behavior: 'smooth' })
@@ -111,6 +138,10 @@ defineExpose({
   display: grid;
   grid-template-columns: 1fr;
   gap: 22px;
+}
+
+.details-card-link {
+  cursor: pointer;
 }
 
 @media (min-width: 768px) {

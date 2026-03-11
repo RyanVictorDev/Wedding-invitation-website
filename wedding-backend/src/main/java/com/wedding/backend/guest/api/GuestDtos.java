@@ -17,7 +17,8 @@ public final class GuestDtos {
             @NotBlank
             @Size(max = 150)
             String name,
-            Boolean godparent
+            Boolean godparent,
+            Boolean willAttend
     ) {
     }
 
@@ -44,6 +45,15 @@ public final class GuestDtos {
                     guest.getCreatedAt()
             );
         }
+    }
+
+    public record GuestPageResponse(
+            List<GuestResponse> content,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
+    ) {
     }
 }
 

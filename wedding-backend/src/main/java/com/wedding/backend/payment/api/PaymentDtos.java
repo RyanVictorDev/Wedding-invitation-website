@@ -17,7 +17,7 @@ public final class PaymentDtos {
 
     public record CreatePaymentRequest(
             @NotNull
-            @DecimalMin(value = "1.00", message = "O valor mínimo é 1,00")
+            @DecimalMin(value = "0.01", message = "O valor deve ser maior que zero")
             BigDecimal amount,
 
             @Size(max = 3)
@@ -70,6 +70,7 @@ public final class PaymentDtos {
             String expiresAt
     ) {
     }
+
 }
 
 

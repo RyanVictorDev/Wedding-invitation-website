@@ -32,11 +32,6 @@ public class Guest {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
         }
-        // Se o convidado é criado no fluxo de confirmação,
-        // por padrão já consideramos confirmado.
-        if (!confirmed) {
-            confirmed = true;
-        }
         if (confirmationDate == null && confirmed) {
             confirmationDate = OffsetDateTime.now();
         }

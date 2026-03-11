@@ -1,5 +1,9 @@
 <template>
-  <section class="payment-section" data-reveal>
+  <section
+    ref="paymentSection"
+    class="payment-section"
+    data-reveal
+  >
     <div class="payment-header">
       <p class="payment-kicker">Presentes</p>
       <h2 class="payment-title">Presenteie os noivos</h2>
@@ -13,26 +17,18 @@
 
     <div class="d-flex">
       <div class="payment-card q-pa-md q-pa-xl-md">
-        <div class="payment-methods">
-          <q-option-group
-            v-model="paymentMethod"
-            :options="methodOptions"
-            color="primary"
-            type="radio"
-          />
-        </div>
-
         <div class="payment-form q-mt-md">
           <div class="row q-col-gutter-md">
             <div class="col-12 col-sm-6">
               <q-input
-                v-model.number="amount"
-                type="number"
-                min="1"
-                step="1"
-                label="Valor do presente (R$)"
+                v-model="displayAmount"
+                label="Valor do presente (qualquer valor)"
+                prefix="R$"
+                input-class="text-left"
                 outlined
                 dense
+                @update:model-value="onAmountInput"
+                @blur="formatDisplayAmount"
               />
             </div>
             <div class="col-12 col-sm-6">
@@ -128,10 +124,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { api } from 'src/boot/axios'
 
-type PaymentMethod = 'PIX'
+const paymentSection = ref<HTMLElement | null>(null)
 
 interface PixPaymentResponse {
   paymentId: number
@@ -146,8 +142,8 @@ interface PixStatusResponse {
   expiresAt: string
 }
 
-const paymentMethod = ref<PaymentMethod>('PIX')
-const amount = ref<number | null>(100)
+const amount = ref<number | null>(20)
+const displayAmount = ref('')
 const payerName = ref('')
 const creating = ref(false)
 
@@ -161,15 +157,8 @@ const pixState = ref<PixPaymentResponse>({
 
 const pollingTimer = ref<number | null>(null)
 
-const methodOptions = [
-  {
-    label: 'Pix',
-    value: 'PIX'
-  }
-]
-
 const canCreatePayment = computed(() => {
-  return !!amount.value && amount.value >= 1 && paymentMethod.value === 'PIX'
+  return amount.value != null && amount.value > 0
 })
 
 const isPaid = computed(() => pixState.value.status === 'PAID')
@@ -212,6 +201,34 @@ async function createPayment () {
     console.error('Erro ao criar pagamento PIX', e)
   } finally {
     creating.value = false
+  }
+}
+
+function onAmountInput (val: string | number | null) {
+  const raw = String(val ?? '').replace(/\D/g, '')
+
+  if (!raw) {
+    amount.value = null
+    displayAmount.value = ''
+    return
+  }
+
+  const cents = parseInt(raw, 10)
+  const value = cents / 100
+
+  amount.value = value
+  displayAmount.value = value.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+}
+
+function formatDisplayAmount () {
+  if (amount.value != null) {
+    displayAmount.value = amount.value.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
   }
 }
 
@@ -258,8 +275,20 @@ async function copyBrCode () {
   }
 }
 
+function scrollToSection () {
+  paymentSection.value?.scrollIntoView({ behavior: 'smooth' })
+}
+
+defineExpose({
+  scrollToSection
+})
+
 onBeforeUnmount(() => {
   stopPolling()
+})
+
+onMounted(() => {
+  formatDisplayAmount()
 })
 </script>
 

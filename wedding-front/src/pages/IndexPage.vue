@@ -5,11 +5,15 @@
       @scroll-details="scrollToDetails"
     />
 
-    <WeddingDetails ref="detailsComponent" />
+    <WeddingDetails
+      ref="detailsComponent"
+      @go-payments="scrollToPayments"
+      @go-messages="scrollToMessages"
+    />
 
-    <PaymentSection />
+    <PaymentSection ref="paymentComponent" />
 
-    <MessageSection />
+    <MessageSection ref="messageComponent" />
   </q-page>
   <PresenceConfirmation ref="presenceModal" />
 </template>
@@ -23,6 +27,8 @@ import MessageSection from 'src/components/MessageSection.vue';
 import PaymentSection from 'src/components/PaymentSection.vue';
 
 const detailsComponent = ref<InstanceType<typeof WeddingDetails> | null>(null)
+const paymentComponent = ref<InstanceType<typeof PaymentSection> | null>(null)
+const messageComponent = ref<InstanceType<typeof MessageSection> | null>(null)
 const revealElements = ref<HTMLElement[]>([]);
 let observer: IntersectionObserver | null = null;
 
@@ -34,6 +40,14 @@ function openPresenceModal () {
 
 function scrollToDetails () {
   detailsComponent.value?.scrollToSection()
+}
+
+function scrollToPayments () {
+  paymentComponent.value?.scrollToSection()
+}
+
+function scrollToMessages () {
+  messageComponent.value?.scrollToSection()
 }
 
 onMounted(() => {
