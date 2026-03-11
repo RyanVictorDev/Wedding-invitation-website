@@ -56,7 +56,17 @@
                 draggable="true"
                 @dragstart="handleDragStart(guest, 'yes')"
               >
-                {{ guest }}
+                <span class="guest-chip__label">
+                  {{ guest }}
+                </span>
+                <button
+                  type="button"
+                  class="guest-chip__remove"
+                  aria-label="Remover convidado"
+                  @click.stop="removeGuest('yes', guest)"
+                >
+                  ✕
+                </button>
               </span>
             </div>
           </div>
@@ -78,7 +88,17 @@
                 draggable="true"
                 @dragstart="handleDragStart(guest, 'no')"
               >
-                {{ guest }}
+                <span class="guest-chip__label">
+                  {{ guest }}
+                </span>
+                <button
+                  type="button"
+                  class="guest-chip__remove"
+                  aria-label="Remover convidado"
+                  @click.stop="removeGuest('no', guest)"
+                >
+                  ✕
+                </button>
               </span>
             </div>
           </div>
@@ -148,6 +168,14 @@ function handleDrop (target: 'yes' | 'no') {
 
   draggingName.value = null
   draggingFrom.value = null
+}
+
+function removeGuest (list: 'yes' | 'no', name: string) {
+  const targetList = list === 'yes' ? confirmedGuests.value : notGoingGuests.value
+  const idx = targetList.indexOf(name)
+  if (idx !== -1) {
+    targetList.splice(idx, 1)
+  }
 }
 
 async function confirmPresence () {
@@ -267,11 +295,27 @@ defineExpose({
 
 .guest-chip {
   font-size: 0.8rem;
-  padding: 6px 12px;
+  padding: 6px 8px;
   border-radius: 999px;
   font-weight: 500;
   letter-spacing: 0.04em;
   cursor: grab;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.guest-chip__label {
+  white-space: nowrap;
+}
+
+.guest-chip__remove {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  font-size: 0.8rem;
 }
 
 .guest-chip--yes {
