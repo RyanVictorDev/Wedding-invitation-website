@@ -24,8 +24,8 @@
       <DetailsCard
         data-reveal
         title="Cerimônia"
-        highlight="Igreja Matriz de Pacatuba"
-        text="Pacatuba - CE | Um cenário especial para testemunhar o nosso “sim”."
+        highlight="Igreja Matriz de São José"
+        text="Maracanaú - CE | Um cenário especial para testemunhar o nosso “sim”."
         icon="⛪"
       />
 

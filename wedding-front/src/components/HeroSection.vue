@@ -15,7 +15,7 @@
         </p>
 
         <p class="hero-location" data-reveal data-reveal-order="4">
-          Igreja Matriz de Pacatuba
+          Igreja Matriz de São José
         </p>
 
         <p class="hero-phrase" data-reveal data-reveal-order="5">
