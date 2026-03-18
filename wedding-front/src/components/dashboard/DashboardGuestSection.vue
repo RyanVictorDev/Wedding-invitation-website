@@ -44,11 +44,11 @@
           />
           <q-tab
             name="yes"
-            label="Só confirmados"
+            label="confirmados"
           />
           <q-tab
             name="no"
-            label="Só não confirmados"
+            label="Não confirmados"
           />
         </q-tabs>
       </div>

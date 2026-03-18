@@ -12,10 +12,10 @@
     </div>
 
     <div v-else>
-      <div
-        v-if="messages.length"
-        class="messages-list"
-      >
+          <div
+            v-if="messages.length"
+            class="messages-list"
+          >
         <div
           v-for="msg in messages"
           :key="msg.id"
@@ -31,7 +31,7 @@
           </div>
           <div
             class="message-content"
-            v-html="msg.content"
+                v-html="sanitizeHtml(msg.content)"
           />
         </div>
 
@@ -57,6 +57,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DashboardPagination from 'components/dashboard/DashboardPagination.vue'
+import DOMPurify from 'dompurify'
 
 interface Message {
   id: number
@@ -83,6 +84,10 @@ const pageModel = computed({
 })
 
 const formatDateTime = (value: string) => props.formatDateTime(value)
+
+function sanitizeHtml (html: string) {
+  return DOMPurify.sanitize(html)
+}
 </script>
 
 <style scoped lang="scss">

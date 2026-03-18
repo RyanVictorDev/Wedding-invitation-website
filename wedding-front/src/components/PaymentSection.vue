@@ -142,6 +142,16 @@ interface PixStatusResponse {
   expiresAt: string
 }
 
+interface PixCachePayload extends PixPaymentResponse {
+  cachedAt: number
+  amount: number | null
+  displayAmount: string
+  payerName: string
+}
+
+const PIX_CACHE_KEY = 'wedding_pix_cache_v1'
+const PIX_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000 // 24h
+
 const amount = ref<number | null>(20)
 const displayAmount = ref('')
 const payerName = ref('')
@@ -156,6 +166,58 @@ const pixState = ref<PixPaymentResponse>({
 })
 
 const pollingTimer = ref<number | null>(null)
+
+function isTerminalStatus (status: string | undefined | null) {
+  const s = String(status ?? '').toUpperCase()
+  return s === 'PAID' || s === 'EXPIRED' || s === 'CANCELLED' || s === 'REFUNDED' || s === 'FAILED'
+}
+
+function loadPixCache () {
+  try {
+    const raw = window.localStorage.getItem(PIX_CACHE_KEY)
+    if (!raw) return
+
+    const parsed = JSON.parse(raw) as PixCachePayload
+    if (!parsed?.pixId) return
+
+    const age = Date.now() - (parsed.cachedAt ?? 0)
+    if (parsed.cachedAt && age > PIX_CACHE_MAX_AGE_MS) {
+      return
+    }
+
+    pixState.value = {
+      paymentId: parsed.paymentId ?? 0,
+      pixId: parsed.pixId,
+      status: parsed.status ?? '',
+      brCode: parsed.brCode ?? '',
+      brCodeBase64: parsed.brCodeBase64 ?? ''
+    }
+
+    amount.value = parsed.amount ?? null
+    payerName.value = parsed.payerName ?? ''
+    displayAmount.value = parsed.displayAmount ?? ''
+  } catch (e) {
+    console.error('Erro ao carregar cache de PIX', e)
+  }
+}
+
+function savePixCache () {
+  try {
+    if (!pixState.value.pixId) return
+
+    const payload: PixCachePayload = {
+      ...pixState.value,
+      cachedAt: Date.now(),
+      amount: amount.value,
+      displayAmount: displayAmount.value,
+      payerName: payerName.value
+    }
+
+    window.localStorage.setItem(PIX_CACHE_KEY, JSON.stringify(payload))
+  } catch (e) {
+    console.error('Erro ao salvar cache de PIX', e)
+  }
+}
 
 const canCreatePayment = computed(() => {
   return amount.value != null && amount.value > 0
@@ -193,6 +255,8 @@ async function createPayment () {
 
     const { data } = await api.post<PixPaymentResponse>('/payments/pix', payload)
     pixState.value = data
+
+    savePixCache()
 
     if (pixState.value.pixId) {
       startPolling()
@@ -239,11 +303,12 @@ async function pollStatus () {
 
   try {
     const { data } = await api.get<PixStatusResponse>(`/payments/pix/${pixState.value.pixId}/status`)
-    if (data.status) {
+    if (data.status && data.status !== pixState.value.status) {
       pixState.value.status = data.status
+      savePixCache()
     }
 
-    if (isPaid.value || pixState.value.status === 'EXPIRED' || pixState.value.status === 'CANCELLED' || pixState.value.status === 'REFUNDED') {
+    if (isTerminalStatus(pixState.value.status)) {
       stopPolling()
     }
   } catch (e) {
@@ -288,7 +353,22 @@ onBeforeUnmount(() => {
 })
 
 onMounted(() => {
-  formatDisplayAmount()
+  // Se o usuário sair do site (ex: ir ao banco) e voltar,
+  // recuperamos o PIX do cache para não "sumir" sem atualizar status.
+  loadPixCache()
+
+  if (!displayAmount.value) {
+    formatDisplayAmount()
+  }
+
+  const hasPix = !!pixState.value.pixId
+  if (hasPix && !isTerminalStatus(pixState.value.status)) {
+    startPolling()
+    void pollStatus() // tentativa imediata ao voltar
+  } else if (hasPix) {
+    // garante cache atualizado caso status viesse vazio do armazenamento
+    savePixCache()
+  }
 })
 </script>
 

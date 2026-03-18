@@ -43,6 +43,17 @@ import { ref } from 'vue';
   border: 1px solid rgba(200, 107, 90, 0.18);
   position: relative;
   overflow: hidden;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background 200ms ease;
+}
+
+.details-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(242, 190, 255, 0.753);
+  box-shadow: 0 18px 36px rgba(88, 43, 34, 0.18);
 }
 
 .details-icon {
