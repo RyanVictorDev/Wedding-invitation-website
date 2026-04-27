@@ -18,7 +18,9 @@
           Igreja Matriz de São José
         </p>
 
-        <p class="hero-phrase" data-reveal data-reveal-order="5">
+        <WeddingCountdown data-reveal data-reveal-order="5" />
+
+        <p class="hero-phrase" data-reveal data-reveal-order="6">
           “O amor é a melhor de todas as viagens.
           Queremos você ao nosso lado nesse dia.”
         </p>
@@ -51,6 +53,8 @@
 </template>
 
 <script setup lang="ts">
+import WeddingCountdown from 'src/components/WeddingCountdown.vue'
+
 defineEmits([
   'open-presence',
   'scroll-details'
