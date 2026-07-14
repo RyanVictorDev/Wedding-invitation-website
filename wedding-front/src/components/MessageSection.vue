@@ -146,8 +146,7 @@ defineExpose({
 
 <style scoped lang="scss">
 .message-section {
-  // background: linear-gradient(to top, rgba(236, 207, 192, 0.98), #fdf3ec);
-  background: #fdf3ec;
+  background: #fff8f4;
   padding: 64px 16px 88px;
 }
 

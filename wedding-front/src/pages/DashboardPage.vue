@@ -1,10 +1,22 @@
 <template>
   <q-page class="dashboard-page q-pa-md q-pa-xl-md">
-    <div class="dashboard-card q-pa-lg">
+    <DashboardLoginForm
+      v-if="!isAuthenticated"
+      @logged-in="handleLoggedIn"
+    />
+
+    <div
+      v-else
+      class="dashboard-card q-pa-lg"
+    >
       <div class="dashboard-header">
         <div>
           <p class="dashboard-kicker">Dashboard secreta</p>
           <h1 class="dashboard-title">Visão geral do casamento</h1>
+        </div>
+        <div class="dashboard-actions">
+          <span v-if="username" class="dashboard-user">Olá, {{ username }}</span>
+          <q-btn flat label="Sair" class="logout-btn" @click="handleLogout" />
         </div>
       </div>
 
@@ -33,7 +45,10 @@
           @update:page="value => { guestPage = value }"
           @update:filter="value => { guestFilter = value }"
           @search="handleGuestSearch"
+          @refresh="loadGuests"
         />
+
+        <DashboardGiftsSection />
 
         <DashboardMessagesSection
           :messages="messages"
@@ -43,6 +58,8 @@
           :format-date-time="formatDateTime"
           @update:page="value => { messagesPage = value }"
         />
+
+        <DashboardUsersSection />
       </div>
     </div>
   </q-page>
@@ -51,15 +68,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { api } from 'src/boot/axios'
+import { useAuth } from 'src/composables/useAuth'
+import DashboardLoginForm from 'components/dashboard/DashboardLoginForm.vue'
 import DashboardStatsSection from 'components/dashboard/DashboardStatsSection.vue'
 import DashboardGuestSection from 'components/dashboard/DashboardGuestSection.vue'
+import DashboardGiftsSection from 'components/dashboard/DashboardGiftsSection.vue'
 import DashboardMessagesSection from 'components/dashboard/DashboardMessagesSection.vue'
+import DashboardUsersSection from 'components/dashboard/DashboardUsersSection.vue'
 
 interface GuestSummary {
   id: number
   name: string
   confirmed: boolean
   godparent: boolean
+  responded: boolean
   confirmationDate: string | null
 }
 
@@ -67,6 +89,7 @@ interface DashboardSummaryResponse {
   totalGuests: number
   confirmedGuests: number
   unconfirmedGuests: number
+  pendingGuests: number
   godparents: number
   totalPayments: number
   totalPaymentsCount: number
@@ -100,11 +123,13 @@ interface PagedMessagesResponse {
   totalPages: number
 }
 
+const { isAuthenticated, username, logout } = useAuth()
+
 const loading = ref(true)
 const summary = ref<DashboardSummaryResponse | null>(null)
 
 const guestSearch = ref('')
-const guestFilter = ref<'all' | 'yes' | 'no'>('all')
+const guestFilter = ref<'all' | 'pending' | 'yes' | 'no'>('all')
 const guestPage = ref(1)
 const guestPageSize = ref(10)
 const guestRows = ref<GuestSummary[]>([])
@@ -164,9 +189,7 @@ async function loadGuests () {
       params.status = guestFilter.value
     }
 
-    const { data } = await api.get<PagedGuestsResponse>('/guests', {
-      params
-    })
+    const { data } = await api.get<PagedGuestsResponse>('/guests', { params })
 
     guestRows.value = data.content
     guestTotalPages.value = data.totalPages || 1
@@ -200,6 +223,27 @@ function handleGuestSearch (term: string) {
   void loadGuests()
 }
 
+function handleLoggedIn () {
+  loading.value = true
+  void loadDashboardData()
+}
+
+function handleLogout () {
+  logout()
+  summary.value = null
+  guestRows.value = []
+  messages.value = []
+}
+
+async function loadDashboardData () {
+  loading.value = true
+  await Promise.all([
+    loadSummary(),
+    loadGuests(),
+    loadMessages()
+  ])
+}
+
 watch(guestFilter, () => {
   guestPage.value = 1
   void loadGuests()
@@ -214,9 +258,11 @@ watch(messagesPage, () => {
 })
 
 onMounted(() => {
-  void loadSummary()
-  void loadMessages()
-  void loadGuests()
+  if (isAuthenticated.value) {
+    void loadDashboardData()
+  } else {
+    loading.value = false
+  }
 })
 </script>
 
@@ -244,6 +290,21 @@ onMounted(() => {
   gap: 16px;
 }
 
+.dashboard-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-user {
+  color: #7b5a4c;
+  font-size: 0.9rem;
+}
+
+.logout-btn {
+  color: #a2503b;
+}
+
 .dashboard-kicker {
   text-transform: uppercase;
   letter-spacing: 0.16em;
@@ -257,97 +318,4 @@ onMounted(() => {
   font-size: 1.8rem;
   color: #5a332d;
 }
-
-.section-header {
-  margin-bottom: 8px;
-}
-
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #5a332d;
-}
-
-.section-subtitle {
-  font-size: 0.9rem;
-  color: #7b5a4c;
-}
-
-.guest-table {
-  margin-top: 8px;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.guest-filters {
-  align-items: center;
-}
-
-.messages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.message-card {
-  background: #fff9f4;
-  border-radius: 14px;
-  padding: 12px 14px;
-  border: 1px solid rgba(200, 107, 90, 0.18);
-}
-
-.message-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 6px;
-}
-
-.message-author {
-  font-weight: 600;
-  color: #5a332d;
-}
-
-.message-date {
-  font-size: 0.8rem;
-  color: #8b6a60;
-}
-
-.message-content {
-  font-size: 0.9rem;
-  color: #4b2b28;
-}
-
-.messages-pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-}
-
-.messages-page-numbers {
-  display: flex;
-  gap: 4px;
-}
-
-.messages-page-number {
-  min-width: 32px;
-  padding: 0 6px;
-  font-size: 0.78rem;
-}
-
-.messages-page-number--active {
-  font-weight: 600;
-  background-color: #6b7a3a;
-  color: #fdfaf4;
-  border-radius: 999px;
-}
-
-.messages-page-indicator {
-  text-align: center;
-  font-size: 0.8rem;
-  color: #7b5a4c;
-}
 </style>
-
-

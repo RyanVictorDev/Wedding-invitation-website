@@ -17,20 +17,26 @@
 
       <div class="col-12 col-md-3">
         <div class="stat-card">
-          <div class="stat-label">Não confirmados</div>
+          <div class="stat-label">Não vão</div>
           <div class="stat-value text-negative">{{ summary?.unconfirmedGuests ?? 0 }}</div>
         </div>
       </div>
 
       <div class="col-12 col-md-3">
         <div class="stat-card">
-          <div class="stat-label">Padrinhos / Madrinhas</div>
-          <div class="stat-value">{{ summary?.godparents ?? 0 }}</div>
+          <div class="stat-label">Pendentes</div>
+          <div class="stat-value">{{ summary?.pendingGuests ?? 0 }}</div>
         </div>
       </div>
     </div>
 
-    <div class="row q-col-gutter-lg q-mt-lg">
+    <div class="row q-col-gutter-lg q-mt-md">
+      <div class="col-12 col-md-3">
+        <div class="stat-card">
+          <div class="stat-label">Padrinhos / Madrinhas</div>
+          <div class="stat-value">{{ summary?.godparents ?? 0 }}</div>
+        </div>
+      </div>
       <div class="col-12 col-md-4">
         <div class="stat-card stat-card--highlight">
           <div class="stat-label">Total recebido (pagos)</div>
@@ -75,6 +81,7 @@ interface DashboardSummary {
   totalGuests: number
   confirmedGuests: number
   unconfirmedGuests: number
+  pendingGuests: number
   godparents: number
   totalPayments: number
   totalPaymentsCount: number

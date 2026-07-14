@@ -8,10 +8,13 @@
     <WeddingDetails
       ref="detailsComponent"
       @go-payments="scrollToPayments"
+      @go-gifts="scrollToGifts"
       @go-messages="scrollToMessages"
     />
 
     <PaymentSection ref="paymentComponent" />
+
+    <GiftListSection ref="giftComponent" />
 
     <MessageSection ref="messageComponent" />
   </q-page>
@@ -25,9 +28,11 @@ import WeddingDetails from 'src/components/WeddingDetails.vue';
 import HeroSection from 'src/components/HeroSection.vue'
 import MessageSection from 'src/components/MessageSection.vue';
 import PaymentSection from 'src/components/PaymentSection.vue';
+import GiftListSection from 'src/components/GiftListSection.vue';
 
 const detailsComponent = ref<InstanceType<typeof WeddingDetails> | null>(null)
 const paymentComponent = ref<InstanceType<typeof PaymentSection> | null>(null)
+const giftComponent = ref<InstanceType<typeof GiftListSection> | null>(null)
 const messageComponent = ref<InstanceType<typeof MessageSection> | null>(null)
 const revealElements = ref<HTMLElement[]>([]);
 let observer: IntersectionObserver | null = null;
@@ -44,6 +49,10 @@ function scrollToDetails () {
 
 function scrollToPayments () {
   paymentComponent.value?.scrollToSection()
+}
+
+function scrollToGifts () {
+  giftComponent.value?.scrollToSection()
 }
 
 function scrollToMessages () {

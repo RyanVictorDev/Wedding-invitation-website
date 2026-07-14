@@ -45,7 +45,7 @@ interface WeddingCountdownProps {
 }
 
 const props = withDefaults(defineProps<WeddingCountdownProps>(), {
-  target: '2026-10-03T15:00:00',
+  target: '2026-10-03T15:30:00',
   label: 'Faltam para o nosso sim'
 })
 

@@ -13,6 +13,7 @@ public final class DashboardDtos {
             String name,
             boolean confirmed,
             boolean godparent,
+            boolean responded,
             String confirmationDate
     ) {
     }
@@ -21,6 +22,7 @@ public final class DashboardDtos {
             long totalGuests,
             long confirmedGuests,
             long unconfirmedGuests,
+            long pendingGuests,
             long godparents,
             BigDecimal totalPayments,
             long totalPaymentsCount,

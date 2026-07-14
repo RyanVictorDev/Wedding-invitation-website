@@ -1,8 +1,6 @@
 package com.wedding.backend.guest.api;
 
-import com.wedding.backend.guest.api.GuestDtos.ConfirmGuestsRequest;
-import com.wedding.backend.guest.api.GuestDtos.GuestPageResponse;
-import com.wedding.backend.guest.api.GuestDtos.GuestResponse;
+import com.wedding.backend.guest.api.GuestDtos.*;
 import com.wedding.backend.guest.service.GuestService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -20,10 +18,32 @@ public class GuestController {
         this.guestService = guestService;
     }
 
+    @GetMapping("/lookup")
+    public List<GuestLookupResponse> lookupGuests(@RequestParam String search) {
+        return guestService.lookupGuests(search);
+    }
+
     @PostMapping("/confirm")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.OK)
     public List<GuestResponse> confirmGuests(@Valid @RequestBody ConfirmGuestsRequest request) {
         return guestService.confirmGuests(request);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public GuestResponse createGuest(@Valid @RequestBody CreateGuestRequest request) {
+        return guestService.createGuest(request);
+    }
+
+    @PutMapping("/{id}")
+    public GuestResponse updateGuest(@PathVariable Long id, @Valid @RequestBody UpdateGuestRequest request) {
+        return guestService.updateGuest(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteGuest(@PathVariable Long id) {
+        guestService.deleteGuest(id);
     }
 
     @GetMapping
@@ -36,4 +56,3 @@ public class GuestController {
         return guestService.listGuests(page, size, search, status);
     }
 }
-

@@ -21,6 +21,12 @@ public class Guest {
     @Column(nullable = false)
     private boolean godparent;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean responded;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean preRegistered;
+
     @Column
     private OffsetDateTime confirmationDate;
 
@@ -32,7 +38,7 @@ public class Guest {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
         }
-        if (confirmationDate == null && confirmed) {
+        if (confirmationDate == null && confirmed && responded) {
             confirmationDate = OffsetDateTime.now();
         }
     }
@@ -69,6 +75,22 @@ public class Guest {
         this.godparent = godparent;
     }
 
+    public boolean isResponded() {
+        return responded;
+    }
+
+    public void setResponded(boolean responded) {
+        this.responded = responded;
+    }
+
+    public boolean isPreRegistered() {
+        return preRegistered;
+    }
+
+    public void setPreRegistered(boolean preRegistered) {
+        this.preRegistered = preRegistered;
+    }
+
     public OffsetDateTime getConfirmationDate() {
         return confirmationDate;
     }
@@ -85,4 +107,3 @@ public class Guest {
         this.createdAt = createdAt;
     }
 }
-

@@ -30,8 +30,9 @@ public class DashboardService {
         List<Payment> payments = paymentRepository.findAll();
 
         long totalGuests = guests.size();
-        long confirmedGuests = guests.stream().filter(Guest::isConfirmed).count();
-        long unconfirmedGuests = totalGuests - confirmedGuests;
+        long confirmedGuests = guests.stream().filter(g -> g.isResponded() && g.isConfirmed()).count();
+        long unconfirmedGuests = guests.stream().filter(g -> g.isResponded() && !g.isConfirmed()).count();
+        long pendingGuests = guests.stream().filter(g -> !g.isResponded()).count();
         long godparents = guests.stream().filter(Guest::isGodparent).count();
 
         BigDecimal totalPayments = payments.stream()
@@ -64,6 +65,7 @@ public class DashboardService {
                         g.getName(),
                         g.isConfirmed(),
                         g.isGodparent(),
+                        g.isResponded(),
                         g.getConfirmationDate() != null ? g.getConfirmationDate().toString() : null
                 ))
                 .toList();
@@ -72,6 +74,7 @@ public class DashboardService {
                 totalGuests,
                 confirmedGuests,
                 unconfirmedGuests,
+                pendingGuests,
                 godparents,
                 totalPayments,
                 totalPaymentsCount,

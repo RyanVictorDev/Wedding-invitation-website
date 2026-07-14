@@ -11,7 +11,7 @@
         </h1>
 
         <p class="hero-date" data-reveal data-reveal-order="3">
-          3 de Outubro, às 15h00
+          3 de Outubro, às 15h30
         </p>
 
         <p class="hero-location" data-reveal data-reveal-order="4">
@@ -67,10 +67,26 @@ defineEmits([
   min-height: 100vh;
   background-image: url('../assets/background.png');
   background-size: cover;
-  background-position: center;
+  background-position: center 28%;
   background-attachment: fixed;
+  background-repeat: no-repeat;
   margin-top: -64px;
   padding-top: 64px;
+}
+
+@media (max-width: 900px) {
+  .wedding-hero {
+    background-attachment: scroll;
+    background-position: 48% 18%;
+    background-size: cover;
+    min-height: 100svh;
+  }
+}
+
+@media (max-width: 480px) {
+  .wedding-hero {
+    background-position: 50% 16%;
+  }
 }
 
 .overlay {
@@ -84,7 +100,7 @@ defineEmits([
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 48px 16px;
+  padding: 48px 16px 110px;
 }
 
 .hero-content {
@@ -144,8 +160,9 @@ defineEmits([
 .scroll-indicator {
   position: absolute;
   left: 50%;
-  bottom: 32px;
+  bottom: 24px;
   transform: translateX(-50%);
+  z-index: 2;
   background: transparent;
   border: none;
   display: flex;

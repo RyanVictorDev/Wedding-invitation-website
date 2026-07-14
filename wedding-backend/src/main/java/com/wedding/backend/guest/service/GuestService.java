@@ -1,20 +1,21 @@
 package com.wedding.backend.guest.service;
 
-import com.wedding.backend.guest.api.GuestDtos.ConfirmGuestEntry;
-import com.wedding.backend.guest.api.GuestDtos.ConfirmGuestsRequest;
-import com.wedding.backend.guest.api.GuestDtos.GuestPageResponse;
-import com.wedding.backend.guest.api.GuestDtos.GuestResponse;
+import com.wedding.backend.guest.api.GuestDtos.*;
 import com.wedding.backend.guest.model.Guest;
 import com.wedding.backend.guest.repository.GuestRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class GuestService {
@@ -25,28 +26,102 @@ public class GuestService {
         this.guestRepository = guestRepository;
     }
 
+    @Transactional(readOnly = true)
+    public List<GuestLookupResponse> lookupGuests(String search) {
+        if (search == null || search.trim().length() < 3) {
+            return List.of();
+        }
+
+        return guestRepository.findByRespondedFalseAndNameContainingIgnoreCaseOrderByNameAsc(search.trim())
+                .stream()
+                .map(GuestLookupResponse::fromEntity)
+                .toList();
+    }
+
     @Transactional
     public List<GuestResponse> confirmGuests(ConfirmGuestsRequest request) {
+        if (request.guests() == null || request.guests().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe ao menos um convidado");
+        }
+
         OffsetDateTime now = OffsetDateTime.now();
+        Set<Long> seenIds = new HashSet<>();
 
-        List<Guest> guests = request.guests().stream()
-                .map(entry -> toGuest(entry, now))
-                .toList();
-
-        return guestRepository.saveAll(guests).stream()
+        return request.guests().stream()
+                .map(entry -> confirmSingleGuest(entry, now, seenIds))
                 .map(GuestResponse::fromEntity)
                 .toList();
     }
 
-    private Guest toGuest(ConfirmGuestEntry entry, OffsetDateTime confirmationDate) {
-        Guest guest = new Guest();
-        guest.setName(entry.name());
-        guest.setGodparent(entry.godparent() != null && entry.godparent());
-        boolean willAttend = entry.willAttend() == null || entry.willAttend();
+    private Guest confirmSingleGuest(ConfirmGuestEntry entry, OffsetDateTime now, Set<Long> seenIds) {
+        if (!seenIds.add(entry.id())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Convidado duplicado na confirmação");
+        }
+
+        Guest guest = guestRepository.findById(entry.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Convidado não encontrado"));
+
+        if (guest.isResponded()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este convidado já confirmou presença");
+        }
+
+        boolean willAttend = entry.willAttend() != null && entry.willAttend();
+        guest.setResponded(true);
         guest.setConfirmed(willAttend);
-        guest.setConfirmationDate(willAttend ? confirmationDate : null);
-        guest.setCreatedAt(confirmationDate);
-        return guest;
+        guest.setConfirmationDate(willAttend ? now : null);
+
+        return guestRepository.save(guest);
+    }
+
+    @Transactional
+    public GuestResponse createGuest(CreateGuestRequest request) {
+        if (guestRepository.existsByNameIgnoreCase(request.name())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um convidado com este nome");
+        }
+
+        Guest guest = new Guest();
+        guest.setName(request.name().trim());
+        guest.setGodparent(request.godparent() != null && request.godparent());
+        guest.setConfirmed(false);
+        guest.setResponded(false);
+        guest.setPreRegistered(true);
+        guest.setConfirmationDate(null);
+        guest.setCreatedAt(OffsetDateTime.now());
+
+        return GuestResponse.fromEntity(guestRepository.save(guest));
+    }
+
+    @Transactional
+    public GuestResponse updateGuest(Long id, UpdateGuestRequest request) {
+        Guest guest = guestRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Convidado não encontrado"));
+
+        if (guestRepository.existsByNameIgnoreCaseAndIdNot(request.name(), id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um convidado com este nome");
+        }
+
+        guest.setName(request.name().trim());
+        guest.setGodparent(request.godparent() != null && request.godparent());
+
+        if (Boolean.TRUE.equals(request.resetResponse())) {
+            guest.setResponded(false);
+            guest.setConfirmed(false);
+            guest.setConfirmationDate(null);
+        }
+
+        return GuestResponse.fromEntity(guestRepository.save(guest));
+    }
+
+    @Transactional
+    public void deleteGuest(Long id) {
+        Guest guest = guestRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Convidado não encontrado"));
+
+        if (guest.isResponded()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Não é possível excluir convidado que já respondeu");
+        }
+
+        guestRepository.delete(guest);
     }
 
     @Transactional(readOnly = true)
@@ -61,19 +136,19 @@ public class GuestService {
         boolean hasSearch = search != null && !search.isBlank();
         String term = hasSearch ? search.trim() : null;
 
-        boolean confirmedFilter;
-        if ("yes".equalsIgnoreCase(status)) {
-            confirmedFilter = true;
+        if ("pending".equalsIgnoreCase(status)) {
             result = hasSearch
-                    ? guestRepository.findByConfirmedAndNameContainingIgnoreCase(true, term, pageable)
-                    : guestRepository.findByConfirmed(true, pageable);
+                    ? guestRepository.findByRespondedAndNameContainingIgnoreCase(false, term, pageable)
+                    : guestRepository.findByResponded(false, pageable);
+        } else if ("yes".equalsIgnoreCase(status)) {
+            result = hasSearch
+                    ? guestRepository.findByRespondedAndConfirmedAndNameContainingIgnoreCase(true, true, term, pageable)
+                    : guestRepository.findByRespondedAndConfirmed(true, true, pageable);
         } else if ("no".equalsIgnoreCase(status)) {
-            confirmedFilter = false;
             result = hasSearch
-                    ? guestRepository.findByConfirmedAndNameContainingIgnoreCase(false, term, pageable)
-                    : guestRepository.findByConfirmed(false, pageable);
+                    ? guestRepository.findByRespondedAndConfirmedAndNameContainingIgnoreCase(true, false, term, pageable)
+                    : guestRepository.findByRespondedAndConfirmed(true, false, pageable);
         } else {
-            // all
             result = hasSearch
                     ? guestRepository.findByNameContainingIgnoreCase(term, pageable)
                     : guestRepository.findAll(pageable);
@@ -90,4 +165,3 @@ public class GuestService {
         );
     }
 }
-

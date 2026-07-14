@@ -16,7 +16,7 @@
         isOlive
         data-reveal
         title="Data & Horário"
-        highlight="3 de Outubro · 15h00"
+        highlight="3 de Outubro · 15h30"
         text="Chegue alguns minutos antes para se acomodar com calma e aproveitar cada momento."
         icon="⏰"
       />
@@ -41,8 +41,8 @@
       <DetailsCard
         data-reveal
         title="Confirmação de presença"
-        highlight="Confirme diretamente pelo site"
-        text="Use o botão de confirmação na parte superior da página para informar quem poderá ir e quem não poderá. Você também pode deixar um recado carinhoso para nós."
+        highlight="Busque seu nome completo"
+        text="Use o botão de confirmação no topo da página, busque seu nome na lista e informe quem poderá ir ou não. Você também pode deixar um recado carinhoso para nós."
         icon="❤"
       />
 
@@ -55,6 +55,17 @@
         text="Se quiser, você pode nos presentear com qualquer valor na seção “Presenteie os noivos”. O presente em dinheiro é apenas uma forma de carinho a mais – completamente opcional."
         icon="🎁"
         @click="emit('go-payments')"
+      />
+
+      <DetailsCard
+        isOlive
+        data-reveal
+        class="details-card-link"
+        title="Lista de presentes"
+        highlight="Escolha um mimo especial"
+        text="Veja nossa lista de presentes com sugestões de itens. Você pode reservar anonimamente ou deixar seu nome."
+        icon="🎀"
+        @click="emit('go-gifts')"
       />
 
       <DetailsCard
@@ -78,6 +89,7 @@ const detailsSection = ref<HTMLElement | null>(null)
 
 const emit = defineEmits<{
   (e: 'go-payments'): void
+  (e: 'go-gifts'): void
   (e: 'go-messages'): void
 }>()
 

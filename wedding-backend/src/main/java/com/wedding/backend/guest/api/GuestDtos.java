@@ -3,6 +3,7 @@ package com.wedding.backend.guest.api;
 import com.wedding.backend.guest.model.Guest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.OffsetDateTime;
@@ -14,11 +15,8 @@ public final class GuestDtos {
     }
 
     public record ConfirmGuestEntry(
-            @NotBlank
-            @Size(max = 150)
-            String name,
-            Boolean godparent,
-            Boolean willAttend
+            @NotNull Long id,
+            @NotNull Boolean willAttend
     ) {
     }
 
@@ -27,11 +25,35 @@ public final class GuestDtos {
     ) {
     }
 
+    public record GuestLookupResponse(
+            Long id,
+            String name,
+            boolean godparent
+    ) {
+        public static GuestLookupResponse fromEntity(Guest guest) {
+            return new GuestLookupResponse(guest.getId(), guest.getName(), guest.isGodparent());
+        }
+    }
+
+    public record CreateGuestRequest(
+            @NotBlank @Size(max = 150) String name,
+            Boolean godparent
+    ) {
+    }
+
+    public record UpdateGuestRequest(
+            @NotBlank @Size(max = 150) String name,
+            Boolean godparent,
+            Boolean resetResponse
+    ) {
+    }
+
     public record GuestResponse(
             Long id,
             String name,
             boolean confirmed,
             boolean godparent,
+            boolean responded,
             OffsetDateTime confirmationDate,
             OffsetDateTime createdAt
     ) {
@@ -41,6 +63,7 @@ public final class GuestDtos {
                     guest.getName(),
                     guest.isConfirmed(),
                     guest.isGodparent(),
+                    guest.isResponded(),
                     guest.getConfirmationDate(),
                     guest.getCreatedAt()
             );
@@ -56,4 +79,3 @@ public final class GuestDtos {
     ) {
     }
 }
-
