@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="totalPages > 1"
+    v-if="totalPages >= 1"
     class="dashboard-pagination"
   >
     <q-btn

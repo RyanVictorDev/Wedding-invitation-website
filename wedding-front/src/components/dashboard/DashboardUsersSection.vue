@@ -25,6 +25,7 @@
       :columns="columns"
       row-key="id"
       hide-bottom
+      :pagination="{ rowsPerPage: 0 }"
       class="users-table"
     >
       <template #body-cell-createdAt="props">

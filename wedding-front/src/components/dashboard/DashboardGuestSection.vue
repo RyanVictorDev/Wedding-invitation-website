@@ -56,25 +56,27 @@
       :columns="columns"
       row-key="id"
       hide-bottom
+      :pagination="{ rowsPerPage: 0 }"
       class="guest-table"
+      :loading="loading"
     >
-      <template #body-cell-status="props">
-        <q-td :props="props">
+      <template #body-cell-status="slotProps">
+        <q-td :props="slotProps">
           <q-chip
-            :color="statusColor(props.row)"
+            :color="statusColor(slotProps.row)"
             text-color="white"
             dense
             square
           >
-            {{ statusLabel(props.row) }}
+            {{ statusLabel(slotProps.row) }}
           </q-chip>
         </q-td>
       </template>
 
-      <template #body-cell-godparent="props">
-        <q-td :props="props">
+      <template #body-cell-godparent="slotProps">
+        <q-td :props="slotProps">
           <q-chip
-            v-if="props.row.godparent"
+            v-if="slotProps.row.godparent"
             color="orange-7"
             text-color="white"
             dense
@@ -86,25 +88,25 @@
         </q-td>
       </template>
 
-      <template #body-cell-confirmationDate="props">
-        <q-td :props="props">
-          <span v-if="props.row.confirmationDate">
-            {{ formatDateTime(props.row.confirmationDate) }}
+      <template #body-cell-confirmationDate="slotProps">
+        <q-td :props="slotProps">
+          <span v-if="slotProps.row.confirmationDate">
+            {{ formatDateTime(slotProps.row.confirmationDate) }}
           </span>
           <span v-else>—</span>
         </q-td>
       </template>
 
-      <template #body-cell-actions="props">
-        <q-td :props="props">
-          <q-btn flat dense icon="edit" @click="openEditDialog(props.row)" />
+      <template #body-cell-actions="slotProps">
+        <q-td :props="slotProps">
+          <q-btn flat dense icon="edit" @click="openEditDialog(slotProps.row)" />
           <q-btn
-            v-if="!props.row.responded"
+            v-if="!slotProps.row.responded"
             flat
             dense
             icon="delete"
             color="negative"
-            @click="removeGuest(props.row.id)"
+            @click="removeGuest(slotProps.row.id)"
           />
         </q-td>
       </template>
@@ -114,13 +116,20 @@
       Nenhum convidado encontrado.
     </div>
 
-    <DashboardPagination
-      v-if="rows.length"
-      v-model:model-value="pageModel"
-      :total-pages="totalPages"
-      :loading="loading"
-      class="q-mt-md"
-    />
+    <div
+      v-if="rows.length || totalElements > 0"
+      class="guest-pagination-wrap q-mt-md"
+    >
+      <DashboardPagination
+        v-model="pageModel"
+        :total-pages="totalPages"
+        :loading="loading"
+      />
+      <div class="guest-page-indicator q-mt-sm">
+        Página {{ page }} de {{ totalPages }}
+        <span v-if="totalElements"> · {{ totalElements }} convidado{{ totalElements === 1 ? '' : 's' }}</span>
+      </div>
+    </div>
 
     <q-dialog v-model="dialogOpen" persistent>
       <q-card class="q-pa-md" style="min-width: 360px">
@@ -162,6 +171,7 @@ const props = defineProps<{
   loading: boolean
   page: number
   totalPages: number
+  totalElements: number
   search: string
   filter: 'all' | 'pending' | 'yes' | 'no'
   formatDateTime: (value: string) => string
@@ -313,6 +323,18 @@ function handleClear () {
   margin-top: 8px;
   border-radius: 14px;
   overflow: hidden;
+}
+
+.guest-pagination-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.guest-page-indicator {
+  font-size: 0.85rem;
+  color: #7b5a4c;
+  text-align: center;
 }
 
 .guest-filters {

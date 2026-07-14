@@ -13,13 +13,14 @@
 
       <q-card-section class="select-section">
         <q-input
-          v-model="searchTerm"
+          :model-value="searchTerm"
           label="Buscar convidado (mín. 3 letras)"
           outlined
           dense
           class="guest-input"
           clearable
           :loading="searchLoading"
+          @update:model-value="onSearchInput"
         />
 
         <div v-if="searchResults.length" class="search-results q-mt-sm">
@@ -39,7 +40,7 @@
           v-else-if="searchTerm.trim().length >= 3 && !searchLoading"
           class="search-empty q-mt-sm"
         >
-          Nome não encontrado na lista de convidados.
+          Nome já confirmado ou não encontrado na lista de convidados.
         </div>
       </q-card-section>
 
@@ -143,6 +144,10 @@ const draggingGuest = ref<GuestLookup | null>(null)
 const draggingFrom = ref<'yes' | 'no' | null>(null)
 
 let searchTimer: number | null = null
+
+function onSearchInput (value: string | number | null) {
+  searchTerm.value = value == null ? '' : String(value)
+}
 
 watch(searchTerm, (value) => {
   if (searchTimer !== null) {

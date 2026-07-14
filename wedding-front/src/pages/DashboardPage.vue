@@ -39,6 +39,7 @@
           :loading="guestsLoading"
           :page="guestPage"
           :total-pages="guestTotalPages"
+          :total-elements="guestTotalElements"
           :search="guestSearch"
           :filter="guestFilter"
           :format-date-time="formatDateTime"
@@ -135,6 +136,7 @@ const guestPageSize = ref(10)
 const guestRows = ref<GuestSummary[]>([])
 const guestsLoading = ref(false)
 const guestTotalPages = ref(1)
+const guestTotalElements = ref(0)
 
 const formattedTotalPayments = computed(() => {
   const value = summary.value?.totalPayments ?? 0
@@ -179,20 +181,18 @@ async function loadGuests () {
     const page = guestPage.value - 1
     const size = guestPageSize.value
 
-    const params: Record<string, unknown> = { page, size }
+    const { data } = await api.get<PagedGuestsResponse>('/guests', {
+      params: {
+        page,
+        size,
+        ...(guestSearch.value.trim() ? { search: guestSearch.value.trim() } : {}),
+        ...(guestFilter.value !== 'all' ? { status: guestFilter.value } : {})
+      }
+    })
 
-    if (guestSearch.value.trim()) {
-      params.search = guestSearch.value.trim()
-    }
-
-    if (guestFilter.value !== 'all') {
-      params.status = guestFilter.value
-    }
-
-    const { data } = await api.get<PagedGuestsResponse>('/guests', { params })
-
-    guestRows.value = data.content
-    guestTotalPages.value = data.totalPages || 1
+    guestRows.value = data.content ?? []
+    guestTotalElements.value = data.totalElements ?? 0
+    guestTotalPages.value = Math.max(1, data.totalPages ?? 1)
   } catch (e) {
     console.error('Erro ao carregar convidados', e)
   } finally {
