@@ -2,6 +2,8 @@ package com.wedding.backend.payment.abacatepay;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -33,21 +35,58 @@ public class AbacatePayClient {
             body.put("description", description);
         }
 
-        return restClient.post()
-                .uri("/pixQrCode/create")
-                .body(body)
-                .retrieve()
-                .body(PixQrCodeCreateResponse.class);
+        try {
+            return restClient.post()
+                    .uri("/pixQrCode/create")
+                    .body(body)
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, response) -> {
+                        throw mapProviderError(response.getStatusCode());
+                    })
+                    .body(PixQrCodeCreateResponse.class);
+        } catch (AbacatePayException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new AbacatePayException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Falha ao gerar PIX na AbacatePay"
+            );
+        }
     }
 
     public PixQrCodeStatusResponse checkPixStatus(String pixId) {
-        return restClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/pixQrCode/check")
-                        .queryParam("id", pixId)
-                        .build())
-                .retrieve()
-                .body(PixQrCodeStatusResponse.class);
+        try {
+            return restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/pixQrCode/check")
+                            .queryParam("id", pixId)
+                            .build())
+                    .retrieve()
+                    .onStatus(HttpStatusCode::isError, (request, response) -> {
+                        throw mapProviderError(response.getStatusCode());
+                    })
+                    .body(PixQrCodeStatusResponse.class);
+        } catch (AbacatePayException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new AbacatePayException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Falha ao consultar status do PIX na AbacatePay"
+            );
+        }
+    }
+
+    private static AbacatePayException mapProviderError(HttpStatusCode statusCode) {
+        if (statusCode.value() == 401 || statusCode.value() == 403) {
+            return new AbacatePayException(
+                    HttpStatus.BAD_GATEWAY,
+                    "Chave da AbacatePay inválida ou inativa. Verifique ABACATEPAY_API_KEY no .env"
+            );
+        }
+        return new AbacatePayException(
+                HttpStatus.BAD_GATEWAY,
+                "AbacatePay recusou a criação do PIX (HTTP " + statusCode.value() + ")"
+        );
     }
 }
 

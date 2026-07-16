@@ -30,15 +30,6 @@
       />
 
       <DetailsCard
-        isOlive
-        data-reveal
-        title="Vestimenta"
-        highlight="Tons terrosos & verde oliva"
-        text="Traje passeio completo em cores suaves que conversem com terracota, nude e verde oliva."
-        icon="👗"
-      />
-
-      <DetailsCard
         data-reveal
         title="Confirmação de presença"
         highlight="Busque seu nome completo"
