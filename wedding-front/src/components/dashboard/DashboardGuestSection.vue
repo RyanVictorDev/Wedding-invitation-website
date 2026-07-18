@@ -1,18 +1,43 @@
 <template>
   <div class="q-mt-xl">
-    <div class="section-header row items-center justify-between">
-      <div>
+    <div class="section-header row items-center justify-between q-col-gutter-sm">
+      <div class="col-12 col-md">
         <h2 class="section-title">Lista de convidados</h2>
         <div class="section-subtitle">
           Cadastre convidados e acompanhe confirmações de presença.
         </div>
       </div>
-      <q-btn
-        unelevated
-        label="Adicionar convidado"
-        class="action-btn"
-        @click="openCreateDialog"
-      />
+      <div class="col-12 col-md-auto header-actions">
+        <q-btn
+          flat
+          no-caps
+          label="Baixar modelo"
+          class="secondary-btn"
+          icon="download"
+          @click="downloadTemplate"
+        />
+        <q-btn
+          flat
+          no-caps
+          label="Importar planilha"
+          class="secondary-btn"
+          icon="upload_file"
+          @click="triggerImportFile"
+        />
+        <q-btn
+          unelevated
+          label="Adicionar convidado"
+          class="action-btn"
+          @click="openCreateDialog"
+        />
+        <input
+          ref="importFileInput"
+          type="file"
+          accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          class="hidden-file-input"
+          @change="handleImportFile"
+        >
+      </div>
     </div>
 
     <div class="guest-filters row q-col-gutter-md q-mb-sm q-mt-md">
@@ -149,13 +174,120 @@
         </div>
       </q-card>
     </q-dialog>
+
+    <q-dialog
+      v-model="importDialogOpen"
+      persistent
+    >
+      <q-card class="import-dialog q-pa-md">
+        <div class="dialog-title">Importar convidados em lote</div>
+        <p class="import-dialog-subtitle">
+          Revise os dados da planilha antes de confirmar. Todos os convidados serão cadastrados como pendentes.
+        </p>
+
+        <div
+          v-if="importFileError"
+          class="form-error q-mt-sm"
+        >
+          {{ importFileError }}
+        </div>
+
+        <div
+          v-if="importRows.length"
+          class="import-summary q-mt-md"
+        >
+          <q-chip
+            :color="importIsValid ? 'positive' : 'negative'"
+            text-color="white"
+            dense
+            square
+          >
+            {{ importIsValid ? 'Planilha válida' : 'Corrija os erros abaixo' }}
+          </q-chip>
+          <span class="import-count">{{ importRows.length }} convidado{{ importRows.length === 1 ? '' : 's' }}</span>
+        </div>
+
+        <q-table
+          v-if="importRows.length"
+          flat
+          bordered
+          :rows="importRows"
+          :columns="importColumns"
+          row-key="rowNumber"
+          hide-bottom
+          :pagination="{ rowsPerPage: 0 }"
+          class="import-table q-mt-md"
+        >
+          <template #body-cell-godparent="slotProps">
+            <q-td :props="slotProps">
+              <span v-if="slotProps.row.godparent === true">Sim</span>
+              <span v-else-if="slotProps.row.godparent === false">Não</span>
+              <span v-else>—</span>
+            </q-td>
+          </template>
+
+          <template #body-cell-status="slotProps">
+            <q-td :props="slotProps">
+              <q-chip
+                v-if="slotProps.row.errors.length"
+                color="negative"
+                text-color="white"
+                dense
+                square
+              >
+                Inválido
+              </q-chip>
+              <q-chip
+                v-else
+                color="positive"
+                text-color="white"
+                dense
+                square
+              >
+                OK
+              </q-chip>
+            </q-td>
+          </template>
+
+          <template #body-cell-errors="slotProps">
+            <q-td :props="slotProps">
+              <span v-if="slotProps.row.errors.length">{{ slotProps.row.errors.join(' · ') }}</span>
+              <span v-else>—</span>
+            </q-td>
+          </template>
+        </q-table>
+
+        <div class="dialog-actions q-mt-md">
+          <q-btn
+            flat
+            label="Cancelar"
+            @click="closeImportDialog"
+          />
+          <q-btn
+            unelevated
+            label="Confirmar"
+            class="action-btn"
+            :disable="!importIsValid"
+            :loading="importing"
+            @click="confirmImport"
+          />
+        </div>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
+import { Notify } from 'quasar'
 import { api } from 'src/boot/axios'
 import DashboardPagination from 'components/dashboard/DashboardPagination.vue'
+import {
+  downloadGuestTemplate,
+  isImportValid,
+  parseGuestSpreadsheet,
+  type ParsedGuestRow
+} from 'src/utils/guestImport'
 
 interface GuestSummary {
   id: number
@@ -188,6 +320,21 @@ const dialogOpen = ref(false)
 const editingId = ref<number | null>(null)
 const saving = ref(false)
 const formError = ref('')
+const importDialogOpen = ref(false)
+const importFileInput = ref<HTMLInputElement | null>(null)
+const importRows = ref<ParsedGuestRow[]>([])
+const importFileError = ref('')
+const importing = ref(false)
+
+const importIsValid = computed(() => isImportValid(importRows.value))
+
+const importColumns = [
+  { name: 'rowNumber', label: 'Linha', field: 'rowNumber', align: 'left' as const },
+  { name: 'name', label: 'Nome', field: 'name', align: 'left' as const },
+  { name: 'godparent', label: 'Padrinho/Madrinha', field: 'godparent', align: 'left' as const },
+  { name: 'status', label: 'Status', field: 'status', align: 'left' as const },
+  { name: 'errors', label: 'Erros', field: 'errors', align: 'left' as const }
+]
 
 const form = reactive({
   name: '',
@@ -296,6 +443,103 @@ function handleClear () {
   localSearch.value = ''
   emitSearch()
 }
+
+function downloadTemplate () {
+  downloadGuestTemplate()
+}
+
+function triggerImportFile () {
+  importFileInput.value?.click()
+}
+
+function resetImportFileInput () {
+  if (importFileInput.value) {
+    importFileInput.value.value = ''
+  }
+}
+
+function closeImportDialog () {
+  importDialogOpen.value = false
+  importRows.value = []
+  importFileError.value = ''
+  resetImportFileInput()
+}
+
+async function handleImportFile (event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+
+  if (!file) return
+
+  importFileError.value = ''
+  importRows.value = []
+
+  try {
+    const buffer = await file.arrayBuffer()
+    const { rows, fileError } = parseGuestSpreadsheet(buffer)
+
+    if (fileError) {
+      importFileError.value = fileError
+      importDialogOpen.value = true
+      return
+    }
+
+    importRows.value = rows
+    importDialogOpen.value = true
+  } catch (error) {
+    console.error('Erro ao ler planilha', error)
+    importFileError.value = 'Não foi possível ler a planilha. Verifique se o arquivo é um XLSX válido.'
+    importDialogOpen.value = true
+  } finally {
+    resetImportFileInput()
+  }
+}
+
+async function confirmImport () {
+  if (!importIsValid.value) return
+
+  importing.value = true
+  importFileError.value = ''
+
+  try {
+    const { data } = await api.post<{ created: number; errors: { row: number; name: string; message: string }[] }>(
+      '/guests/import',
+      {
+        guests: importRows.value.map(row => ({
+          row: row.rowNumber,
+          name: row.name.trim(),
+          godparent: row.godparent
+        }))
+      }
+    )
+
+    if (data.errors?.length) {
+      importRows.value = importRows.value.map(row => {
+        const backendError = data.errors.find(error => error.row === row.rowNumber)
+        if (!backendError) return row
+
+        return {
+          ...row,
+          errors: [backendError.message]
+        }
+      })
+      importFileError.value = 'Alguns convidados não puderam ser importados. Corrija os erros e tente novamente.'
+      return
+    }
+
+    Notify.create({
+      type: 'positive',
+      message: `${data.created} convidado${data.created === 1 ? '' : 's'} importado${data.created === 1 ? '' : 's'} com sucesso.`,
+      position: 'top'
+    })
+    closeImportDialog()
+    emit('refresh')
+  } catch {
+    importFileError.value = 'Não foi possível importar os convidados.'
+  } finally {
+    importing.value = false
+  }
+}
 </script>
 
 <style scoped lang="scss">
@@ -317,6 +561,51 @@ function handleClear () {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-size: 0.75rem;
+}
+
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.secondary-btn {
+  color: #6b7a3a;
+  border: 1px solid rgba(107, 122, 58, 0.35);
+  border-radius: 999px;
+  padding-inline: 12px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.import-dialog {
+  width: min(960px, calc(100vw - 32px));
+  max-width: 960px;
+}
+
+.import-dialog-subtitle {
+  margin: 8px 0 0;
+  color: #7b5a4c;
+  font-size: 0.9rem;
+}
+
+.import-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.import-count {
+  color: #7b5a4c;
+  font-size: 0.85rem;
+}
+
+.import-table {
+  max-height: 360px;
+  overflow: auto;
 }
 
 .guest-table {

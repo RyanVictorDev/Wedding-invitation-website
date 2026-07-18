@@ -13,8 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 @Service
@@ -163,5 +165,73 @@ public class GuestService {
                 result.getTotalElements(),
                 result.getTotalPages()
         );
+    }
+
+    @Transactional
+    public ImportGuestsResponse importGuests(ImportGuestsRequest request) {
+        if (request.guests() == null || request.guests().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe ao menos um convidado");
+        }
+
+        List<ImportGuestRowError> errors = new ArrayList<>();
+        Set<String> seenNames = new HashSet<>();
+
+        for (ImportGuestEntry entry : request.guests()) {
+            List<String> rowErrors = validateImportEntry(entry, seenNames);
+            if (!rowErrors.isEmpty()) {
+                errors.add(new ImportGuestRowError(
+                        entry.row(),
+                        entry.name(),
+                        String.join("; ", rowErrors)
+                ));
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            return new ImportGuestsResponse(0, errors);
+        }
+
+        OffsetDateTime now = OffsetDateTime.now();
+
+        for (ImportGuestEntry entry : request.guests()) {
+            Guest guest = new Guest();
+            guest.setName(entry.name().trim());
+            guest.setGodparent(entry.godparent());
+            guest.setConfirmed(false);
+            guest.setResponded(false);
+            guest.setPreRegistered(true);
+            guest.setConfirmationDate(null);
+            guest.setCreatedAt(now);
+            guestRepository.save(guest);
+        }
+
+        return new ImportGuestsResponse(request.guests().size(), List.of());
+    }
+
+    private List<String> validateImportEntry(ImportGuestEntry entry, Set<String> seenNames) {
+        List<String> rowErrors = new ArrayList<>();
+        String name = entry.name() != null ? entry.name().trim() : "";
+
+        if (name.isBlank()) {
+            rowErrors.add("Nome é obrigatório");
+        } else if (name.length() > 150) {
+            rowErrors.add("Nome deve ter no máximo 150 caracteres");
+        }
+
+        if (entry.godparent() == null) {
+            rowErrors.add("Padrinho/Madrinha é obrigatório");
+        }
+
+        if (!name.isBlank()) {
+            String key = name.toLowerCase(Locale.ROOT);
+            if (!seenNames.add(key)) {
+                rowErrors.add("Nome duplicado na importação");
+            }
+            if (guestRepository.existsByNameIgnoreCase(name)) {
+                rowErrors.add("Já existe um convidado com este nome");
+            }
+        }
+
+        return rowErrors;
     }
 }

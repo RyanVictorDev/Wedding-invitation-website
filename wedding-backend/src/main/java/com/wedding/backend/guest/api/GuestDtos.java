@@ -78,4 +78,29 @@ public final class GuestDtos {
             int totalPages
     ) {
     }
+
+    public record ImportGuestEntry(
+            int row,
+            @NotBlank @Size(max = 150) String name,
+            @NotNull Boolean godparent
+    ) {
+    }
+
+    public record ImportGuestsRequest(
+            @NotNull List<@Valid ImportGuestEntry> guests
+    ) {
+    }
+
+    public record ImportGuestRowError(
+            int row,
+            String name,
+            String message
+    ) {
+    }
+
+    public record ImportGuestsResponse(
+            int created,
+            List<ImportGuestRowError> errors
+    ) {
+    }
 }

@@ -55,4 +55,10 @@ public class GuestController {
     ) {
         return guestService.listGuests(page, size, search, status);
     }
+
+    @PostMapping("/import")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ImportGuestsResponse importGuests(@Valid @RequestBody ImportGuestsRequest request) {
+        return guestService.importGuests(request);
+    }
 }
