@@ -65,9 +65,9 @@ defineEmits([
 .wedding-hero {
   position: relative;
   min-height: 100vh;
-  background-image: url('../assets/background.png');
+  background-image: url('../assets/background.jpg');
   background-size: cover;
-  background-position: center 28%;
+  background-position: center center;
   background-attachment: fixed;
   background-repeat: no-repeat;
   margin-top: -64px;
@@ -77,7 +77,7 @@ defineEmits([
 @media (max-width: 900px) {
   .wedding-hero {
     background-attachment: scroll;
-    background-position: 48% 18%;
+    background-position: center center;
     background-size: cover;
     min-height: 100svh;
   }
@@ -85,7 +85,7 @@ defineEmits([
 
 @media (max-width: 480px) {
   .wedding-hero {
-    background-position: 50% 16%;
+    background-position: center center;
   }
 }
 
