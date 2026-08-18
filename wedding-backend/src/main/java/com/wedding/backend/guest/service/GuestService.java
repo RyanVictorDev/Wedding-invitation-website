@@ -2,6 +2,7 @@ package com.wedding.backend.guest.service;
 
 import com.wedding.backend.guest.api.GuestDtos.*;
 import com.wedding.backend.guest.model.AttendanceType;
+import com.wedding.backend.guest.model.GuestAgeCategory;
 import com.wedding.backend.guest.model.Guest;
 import com.wedding.backend.guest.repository.GuestRepository;
 import org.springframework.data.domain.Page;
@@ -59,12 +60,13 @@ public class GuestService {
     private Guest confirmSingleGuest(ConfirmGuestEntry entry, OffsetDateTime now, Set<Long> seenIds) {
         boolean willAttend = entry.willAttend() != null && entry.willAttend();
         AttendanceType attendanceType = resolveAttendanceType(entry, willAttend);
+        GuestAgeCategory ageCategory = resolveAgeCategory(entry);
 
         if (entry.id() != null) {
-            return confirmExistingGuest(entry, now, seenIds, willAttend, attendanceType);
+            return confirmExistingGuest(entry, now, seenIds, willAttend, attendanceType, ageCategory);
         }
 
-        return selfRegisterGuest(entry, now, willAttend, attendanceType);
+        return selfRegisterGuest(entry, now, willAttend, attendanceType, ageCategory);
     }
 
     private Guest confirmExistingGuest(
@@ -72,7 +74,8 @@ public class GuestService {
             OffsetDateTime now,
             Set<Long> seenIds,
             boolean willAttend,
-            AttendanceType attendanceType
+            AttendanceType attendanceType,
+            GuestAgeCategory ageCategory
     ) {
         if (!seenIds.add(entry.id())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Convidado duplicado na confirmação");
@@ -85,7 +88,7 @@ public class GuestService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este convidado já confirmou presença");
         }
 
-        applyConfirmation(guest, willAttend, attendanceType, now);
+        applyConfirmation(guest, willAttend, attendanceType, ageCategory, now);
         return guestRepository.save(guest);
     }
 
@@ -93,7 +96,8 @@ public class GuestService {
             ConfirmGuestEntry entry,
             OffsetDateTime now,
             boolean willAttend,
-            AttendanceType attendanceType
+            AttendanceType attendanceType,
+            GuestAgeCategory ageCategory
     ) {
         String name = entry.name() != null ? entry.name().trim() : "";
         if (name.isBlank()) {
@@ -114,15 +118,22 @@ public class GuestService {
         guest.setGodparent(false);
         guest.setPreRegistered(false);
         guest.setCreatedAt(now);
-        applyConfirmation(guest, willAttend, attendanceType, now);
+        applyConfirmation(guest, willAttend, attendanceType, ageCategory, now);
         return guestRepository.save(guest);
     }
 
-    private void applyConfirmation(Guest guest, boolean willAttend, AttendanceType attendanceType, OffsetDateTime now) {
+    private void applyConfirmation(
+            Guest guest,
+            boolean willAttend,
+            AttendanceType attendanceType,
+            GuestAgeCategory ageCategory,
+            OffsetDateTime now
+    ) {
         guest.setResponded(true);
         guest.setConfirmed(willAttend);
         guest.setConfirmationDate(willAttend ? now : null);
         guest.setAttendanceType(willAttend ? attendanceType : null);
+        guest.setAgeCategory(ageCategory);
     }
 
     private AttendanceType resolveAttendanceType(ConfirmGuestEntry entry, boolean willAttend) {
@@ -135,6 +146,14 @@ public class GuestService {
             return AttendanceType.CEREMONY_AND_RECEPTION;
         }
         return attendanceType;
+    }
+
+    private GuestAgeCategory resolveAgeCategory(ConfirmGuestEntry entry) {
+        GuestAgeCategory ageCategory = entry.ageCategory();
+        if (ageCategory == null) {
+            return GuestAgeCategory.ADULT;
+        }
+        return ageCategory;
     }
 
     @Transactional
@@ -172,6 +191,7 @@ public class GuestService {
             guest.setConfirmed(false);
             guest.setConfirmationDate(null);
             guest.setAttendanceType(null);
+            guest.setAgeCategory(null);
         }
 
         return GuestResponse.fromEntity(guestRepository.save(guest));

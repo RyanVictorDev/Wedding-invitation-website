@@ -67,6 +67,7 @@ public class DashboardService {
                         g.isGodparent(),
                         g.isResponded(),
                         g.getAttendanceType(),
+                        g.getAgeCategory(),
                         g.getConfirmationDate() != null ? g.getConfirmationDate().toString() : null
                 ))
                 .toList();

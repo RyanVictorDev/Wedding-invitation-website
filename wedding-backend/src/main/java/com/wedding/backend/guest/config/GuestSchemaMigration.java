@@ -27,5 +27,8 @@ public class GuestSchemaMigration implements ApplicationRunner {
         jdbcTemplate.execute(
                 "ALTER TABLE guests ADD COLUMN IF NOT EXISTS attendance_type VARCHAR(40)"
         );
+        jdbcTemplate.execute(
+                "ALTER TABLE guests ADD COLUMN IF NOT EXISTS age_category VARCHAR(20)"
+        );
     }
 }

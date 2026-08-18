@@ -84,6 +84,7 @@ interface GuestSummary {
   godparent: boolean
   responded: boolean
   attendanceType: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | null
+  ageCategory: 'ADULT' | 'CHILD' | null
   confirmationDate: string | null
 }
 

@@ -107,6 +107,15 @@
         </q-td>
       </template>
 
+      <template #body-cell-ageCategory="slotProps">
+        <q-td :props="slotProps">
+          <span v-if="slotProps.row.responded && slotProps.row.ageCategory">
+            {{ ageCategoryLabel(slotProps.row.ageCategory) }}
+          </span>
+          <span v-else>—</span>
+        </q-td>
+      </template>
+
       <template #body-cell-godparent="slotProps">
         <q-td :props="slotProps">
           <q-chip
@@ -305,6 +314,7 @@ interface GuestSummary {
   godparent: boolean
   responded: boolean
   attendanceType: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | null
+  ageCategory: 'ADULT' | 'CHILD' | null
   confirmationDate: string | null
 }
 
@@ -356,6 +366,7 @@ const columns = [
   { name: 'name', label: 'Nome', field: 'name', align: 'left' as const },
   { name: 'status', label: 'Status', field: 'status', align: 'left' as const },
   { name: 'attendanceType', label: 'Participação', field: 'attendanceType', align: 'left' as const },
+  { name: 'ageCategory', label: 'Faixa etária', field: 'ageCategory', align: 'left' as const },
   { name: 'godparent', label: 'Padrinho/Madrinha', field: 'godparent', align: 'left' as const },
   { name: 'confirmationDate', label: 'Data de confirmação', field: 'confirmationDate', align: 'left' as const },
   { name: 'actions', label: 'Ações', field: 'actions', align: 'right' as const }
@@ -395,6 +406,11 @@ function statusColor (row: GuestSummary) {
 function attendanceLabel (type: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION') {
   if (type === 'CEREMONY_ONLY') return 'Apenas igreja'
   return 'Casamento + recepção'
+}
+
+function ageCategoryLabel (type: 'ADULT' | 'CHILD') {
+  if (type === 'CHILD') return 'Criança'
+  return 'Adulto'
 }
 
 function openCreateDialog () {

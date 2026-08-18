@@ -34,6 +34,10 @@ public class Guest {
     @Column(length = 40)
     private AttendanceType attendanceType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private GuestAgeCategory ageCategory;
+
     @Column(nullable = false)
     private OffsetDateTime createdAt;
 
@@ -109,6 +113,14 @@ public class Guest {
 
     public void setAttendanceType(AttendanceType attendanceType) {
         this.attendanceType = attendanceType;
+    }
+
+    public GuestAgeCategory getAgeCategory() {
+        return ageCategory;
+    }
+
+    public void setAgeCategory(GuestAgeCategory ageCategory) {
+        this.ageCategory = ageCategory;
     }
 
     public OffsetDateTime getCreatedAt() {

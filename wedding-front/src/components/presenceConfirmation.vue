@@ -23,6 +23,17 @@
         />
 
         <div class="attendance-options q-mt-md">
+          <div class="attendance-label">É adulto ou criança?</div>
+          <q-option-group
+            v-model="selfAgeCategory"
+            :options="ageOptions"
+            type="radio"
+            class="attendance-group"
+            @update:model-value="errorMessage = ''"
+          />
+        </div>
+
+        <div class="attendance-options q-mt-md">
           <div class="attendance-label">Como você participará?</div>
           <q-option-group
             v-model="attendanceChoice"
@@ -91,6 +102,14 @@
                 <span class="guest-chip__label">{{ guest.name }}</span>
                 <button
                   type="button"
+                  class="guest-chip__age"
+                  :aria-label="`Alterar faixa etária de ${guest.name}`"
+                  @click.stop="toggleGuestAge(guest)"
+                >
+                  {{ guest.ageCategory === 'CHILD' ? 'Criança' : 'Adulto' }}
+                </button>
+                <button
+                  type="button"
                   class="guest-chip__remove"
                   aria-label="Remover convidado"
                   @click.stop="removeGuest('yes', guest.id)"
@@ -118,11 +137,11 @@
                 <span class="guest-chip__label">{{ guest.name }}</span>
                 <button
                   type="button"
-                  class="guest-chip__remove"
-                  aria-label="Remover convidado"
-                  @click.stop="removeGuest('no', guest.id)"
+                  class="guest-chip__age"
+                  :aria-label="`Alterar faixa etária de ${guest.name}`"
+                  @click.stop="toggleGuestAge(guest)"
                 >
-                  ✕
+                  {{ guest.ageCategory === 'CHILD' ? 'Criança' : 'Adulto' }}
                 </button>
               </span>
             </div>
@@ -156,14 +175,25 @@ interface GuestLookup {
   godparent: boolean
 }
 
+interface ListGuest extends GuestLookup {
+  ageCategory: 'ADULT' | 'CHILD'
+}
+
 type AttendanceChoice = 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY' | 'NOT_GOING'
+type AgeCategory = 'ADULT' | 'CHILD'
 
 interface ConfirmPayloadEntry {
   id?: number
   name?: string
   willAttend: boolean
   attendanceType?: 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+  ageCategory: AgeCategory
 }
+
+const ageOptions = [
+  { label: 'Adulto', value: 'ADULT' as AgeCategory },
+  { label: 'Criança', value: 'CHILD' as AgeCategory }
+]
 
 const attendanceOptions = [
   {
@@ -182,16 +212,17 @@ const attendanceOptions = [
 
 const dialog = ref(false)
 const selfName = ref('')
+const selfAgeCategory = ref<AgeCategory | null>(null)
 const attendanceChoice = ref<AttendanceChoice | null>(null)
 const searchTerm = ref('')
 const searchResults = ref<GuestLookup[]>([])
 const searchLoading = ref(false)
-const confirmedGuests = ref<GuestLookup[]>([])
-const notGoingGuests = ref<GuestLookup[]>([])
+const confirmedGuests = ref<ListGuest[]>([])
+const notGoingGuests = ref<ListGuest[]>([])
 const saving = ref(false)
 const errorMessage = ref('')
 
-const draggingGuest = ref<GuestLookup | null>(null)
+const draggingGuest = ref<ListGuest | null>(null)
 const draggingFrom = ref<'yes' | 'no' | null>(null)
 
 let searchTimer: number | null = null
@@ -205,12 +236,22 @@ const attendingChoice = computed(() =>
 const canSubmit = computed(() => {
   if (!hasSelfEntry.value && !hasListEntries.value) return false
 
+  if (hasSelfEntry.value && !selfAgeCategory.value) return false
+
   if (hasSelfEntry.value && !attendanceChoice.value) return false
 
   if (confirmedGuests.value.length > 0 && !attendingChoice.value) return false
 
   return true
 })
+
+function toListGuest (guest: GuestLookup): ListGuest {
+  return { ...guest, ageCategory: 'ADULT' }
+}
+
+function toggleGuestAge (guest: ListGuest) {
+  guest.ageCategory = guest.ageCategory === 'ADULT' ? 'CHILD' : 'ADULT'
+}
 
 function onSearchInput (value: string | number | null) {
   searchTerm.value = value == null ? '' : String(value)
@@ -253,13 +294,13 @@ async function lookupGuests (term: string) {
 
 function selectGuest (guest: GuestLookup) {
   if (isSelected(guest.id)) return
-  confirmedGuests.value.push(guest)
+  confirmedGuests.value.push(toListGuest(guest))
   searchResults.value = searchResults.value.filter(g => g.id !== guest.id)
   searchTerm.value = ''
   errorMessage.value = ''
 }
 
-function handleDragStart (guest: GuestLookup, from: 'yes' | 'no') {
+function handleDragStart (guest: ListGuest, from: 'yes' | 'no') {
   draggingGuest.value = guest
   draggingFrom.value = from
 }
@@ -298,14 +339,15 @@ function buildPayload (): ConfirmPayloadEntry[] {
   const guests: ConfirmPayloadEntry[] = []
   const trimmedName = selfName.value.trim()
 
-  if (trimmedName) {
+  if (trimmedName && selfAgeCategory.value) {
     if (attendanceChoice.value === 'NOT_GOING') {
-      guests.push({ name: trimmedName, willAttend: false })
+      guests.push({ name: trimmedName, willAttend: false, ageCategory: selfAgeCategory.value })
     } else if (attendingChoice.value) {
       guests.push({
         name: trimmedName,
         willAttend: true,
-        attendanceType: attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+        attendanceType: attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY',
+        ageCategory: selfAgeCategory.value
       })
     }
   }
@@ -313,12 +355,17 @@ function buildPayload (): ConfirmPayloadEntry[] {
   if (attendingChoice.value) {
     const attendanceType = attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
     for (const guest of confirmedGuests.value) {
-      guests.push({ id: guest.id, willAttend: true, attendanceType })
+      guests.push({
+        id: guest.id,
+        willAttend: true,
+        attendanceType,
+        ageCategory: guest.ageCategory
+      })
     }
   }
 
   for (const guest of notGoingGuests.value) {
-    guests.push({ id: guest.id, willAttend: false })
+    guests.push({ id: guest.id, willAttend: false, ageCategory: guest.ageCategory })
   }
 
   return guests
@@ -326,6 +373,7 @@ function buildPayload (): ConfirmPayloadEntry[] {
 
 function resetForm () {
   selfName.value = ''
+  selfAgeCategory.value = null
   attendanceChoice.value = null
   confirmedGuests.value = []
   notGoingGuests.value = []
@@ -513,6 +561,18 @@ defineExpose({
 
 .guest-chip__label {
   white-space: nowrap;
+}
+
+.guest-chip__age {
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: inherit;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
 }
 
 .guest-chip__remove {
