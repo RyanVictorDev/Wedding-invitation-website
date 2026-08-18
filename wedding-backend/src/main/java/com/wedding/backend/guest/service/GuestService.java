@@ -1,6 +1,7 @@
 package com.wedding.backend.guest.service;
 
 import com.wedding.backend.guest.api.GuestDtos.*;
+import com.wedding.backend.guest.model.AttendanceType;
 import com.wedding.backend.guest.model.Guest;
 import com.wedding.backend.guest.repository.GuestRepository;
 import org.springframework.data.domain.Page;
@@ -56,6 +57,23 @@ public class GuestService {
     }
 
     private Guest confirmSingleGuest(ConfirmGuestEntry entry, OffsetDateTime now, Set<Long> seenIds) {
+        boolean willAttend = entry.willAttend() != null && entry.willAttend();
+        AttendanceType attendanceType = resolveAttendanceType(entry, willAttend);
+
+        if (entry.id() != null) {
+            return confirmExistingGuest(entry, now, seenIds, willAttend, attendanceType);
+        }
+
+        return selfRegisterGuest(entry, now, willAttend, attendanceType);
+    }
+
+    private Guest confirmExistingGuest(
+            ConfirmGuestEntry entry,
+            OffsetDateTime now,
+            Set<Long> seenIds,
+            boolean willAttend,
+            AttendanceType attendanceType
+    ) {
         if (!seenIds.add(entry.id())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Convidado duplicado na confirmação");
         }
@@ -67,12 +85,56 @@ public class GuestService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Este convidado já confirmou presença");
         }
 
-        boolean willAttend = entry.willAttend() != null && entry.willAttend();
+        applyConfirmation(guest, willAttend, attendanceType, now);
+        return guestRepository.save(guest);
+    }
+
+    private Guest selfRegisterGuest(
+            ConfirmGuestEntry entry,
+            OffsetDateTime now,
+            boolean willAttend,
+            AttendanceType attendanceType
+    ) {
+        String name = entry.name() != null ? entry.name().trim() : "";
+        if (name.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Informe o nome do convidado");
+        }
+        if (name.length() > 150) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome deve ter no máximo 150 caracteres");
+        }
+        if (guestRepository.existsByNameIgnoreCase(name)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Este nome já está cadastrado. Busque na lista de convidados."
+            );
+        }
+
+        Guest guest = new Guest();
+        guest.setName(name);
+        guest.setGodparent(false);
+        guest.setPreRegistered(false);
+        guest.setCreatedAt(now);
+        applyConfirmation(guest, willAttend, attendanceType, now);
+        return guestRepository.save(guest);
+    }
+
+    private void applyConfirmation(Guest guest, boolean willAttend, AttendanceType attendanceType, OffsetDateTime now) {
         guest.setResponded(true);
         guest.setConfirmed(willAttend);
         guest.setConfirmationDate(willAttend ? now : null);
+        guest.setAttendanceType(willAttend ? attendanceType : null);
+    }
 
-        return guestRepository.save(guest);
+    private AttendanceType resolveAttendanceType(ConfirmGuestEntry entry, boolean willAttend) {
+        if (!willAttend) {
+            return null;
+        }
+
+        AttendanceType attendanceType = entry.attendanceType();
+        if (attendanceType == null) {
+            return AttendanceType.CEREMONY_AND_RECEPTION;
+        }
+        return attendanceType;
     }
 
     @Transactional
@@ -109,6 +171,7 @@ public class GuestService {
             guest.setResponded(false);
             guest.setConfirmed(false);
             guest.setConfirmationDate(null);
+            guest.setAttendanceType(null);
         }
 
         return GuestResponse.fromEntity(guestRepository.save(guest));

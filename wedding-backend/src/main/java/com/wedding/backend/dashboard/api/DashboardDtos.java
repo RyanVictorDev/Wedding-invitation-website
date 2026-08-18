@@ -1,5 +1,7 @@
 package com.wedding.backend.dashboard.api;
 
+import com.wedding.backend.guest.model.AttendanceType;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -14,6 +16,7 @@ public final class DashboardDtos {
             boolean confirmed,
             boolean godparent,
             boolean responded,
+            AttendanceType attendanceType,
             String confirmationDate
     ) {
     }

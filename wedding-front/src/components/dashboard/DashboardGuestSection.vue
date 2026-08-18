@@ -98,6 +98,15 @@
         </q-td>
       </template>
 
+      <template #body-cell-attendanceType="slotProps">
+        <q-td :props="slotProps">
+          <span v-if="slotProps.row.confirmed && slotProps.row.attendanceType">
+            {{ attendanceLabel(slotProps.row.attendanceType) }}
+          </span>
+          <span v-else>—</span>
+        </q-td>
+      </template>
+
       <template #body-cell-godparent="slotProps">
         <q-td :props="slotProps">
           <q-chip
@@ -295,6 +304,7 @@ interface GuestSummary {
   confirmed: boolean
   godparent: boolean
   responded: boolean
+  attendanceType: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | null
   confirmationDate: string | null
 }
 
@@ -345,6 +355,7 @@ const form = reactive({
 const columns = [
   { name: 'name', label: 'Nome', field: 'name', align: 'left' as const },
   { name: 'status', label: 'Status', field: 'status', align: 'left' as const },
+  { name: 'attendanceType', label: 'Participação', field: 'attendanceType', align: 'left' as const },
   { name: 'godparent', label: 'Padrinho/Madrinha', field: 'godparent', align: 'left' as const },
   { name: 'confirmationDate', label: 'Data de confirmação', field: 'confirmationDate', align: 'left' as const },
   { name: 'actions', label: 'Ações', field: 'actions', align: 'right' as const }
@@ -379,6 +390,11 @@ function statusLabel (row: GuestSummary) {
 function statusColor (row: GuestSummary) {
   if (!row.responded) return 'grey-6'
   return row.confirmed ? 'positive' : 'negative'
+}
+
+function attendanceLabel (type: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION') {
+  if (type === 'CEREMONY_ONLY') return 'Apenas igreja'
+  return 'Casamento + recepção'
 }
 
 function openCreateDialog () {

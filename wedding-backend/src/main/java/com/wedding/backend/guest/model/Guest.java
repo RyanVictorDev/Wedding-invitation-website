@@ -30,6 +30,10 @@ public class Guest {
     @Column
     private OffsetDateTime confirmationDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 40)
+    private AttendanceType attendanceType;
+
     @Column(nullable = false)
     private OffsetDateTime createdAt;
 
@@ -97,6 +101,14 @@ public class Guest {
 
     public void setConfirmationDate(OffsetDateTime confirmationDate) {
         this.confirmationDate = confirmationDate;
+    }
+
+    public AttendanceType getAttendanceType() {
+        return attendanceType;
+    }
+
+    public void setAttendanceType(AttendanceType attendanceType) {
+        this.attendanceType = attendanceType;
     }
 
     public OffsetDateTime getCreatedAt() {

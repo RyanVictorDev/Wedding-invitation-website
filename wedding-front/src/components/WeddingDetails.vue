@@ -32,8 +32,8 @@
       <DetailsCard
         data-reveal
         title="Confirmação de presença"
-        highlight="Busque seu nome completo"
-        text="Use o botão de confirmação no topo da página, busque seu nome na lista e informe quem poderá ir ou não. Você também pode deixar um recado carinhoso para nós."
+        highlight="Escreva seu nome completo"
+        text="Use o botão de confirmação no topo da página, escreva seu nome e informe se estará na igreja, na recepção ou se não poderá ir. Famílias também podem buscar nomes na lista pré-cadastrada."
         icon="❤"
       />
 

@@ -1,5 +1,6 @@
 package com.wedding.backend.guest.api;
 
+import com.wedding.backend.guest.model.AttendanceType;
 import com.wedding.backend.guest.model.Guest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,8 +16,10 @@ public final class GuestDtos {
     }
 
     public record ConfirmGuestEntry(
-            @NotNull Long id,
-            @NotNull Boolean willAttend
+            Long id,
+            @Size(max = 150) String name,
+            @NotNull Boolean willAttend,
+            AttendanceType attendanceType
     ) {
     }
 
@@ -54,6 +57,7 @@ public final class GuestDtos {
             boolean confirmed,
             boolean godparent,
             boolean responded,
+            AttendanceType attendanceType,
             OffsetDateTime confirmationDate,
             OffsetDateTime createdAt
     ) {
@@ -64,6 +68,7 @@ public final class GuestDtos {
                     guest.isConfirmed(),
                     guest.isGodparent(),
                     guest.isResponded(),
+                    guest.getAttendanceType(),
                     guest.getConfirmationDate(),
                     guest.getCreatedAt()
             );

@@ -8,16 +8,41 @@
           <span class="line"></span>
         </div>
         <h2 class="title">Confirmar presença</h2>
-        <p class="subtitle">Busque pelo nome completo e selecione quem irá ao casamento.</p>
+        <p class="subtitle">Escreva seu nome completo e informe como você participará.</p>
       </q-card-section>
 
       <q-card-section class="select-section">
+        <q-input
+          v-model="selfName"
+          label="Nome completo"
+          outlined
+          dense
+          class="guest-input"
+          clearable
+          @update:model-value="errorMessage = ''"
+        />
+
+        <div class="attendance-options q-mt-md">
+          <div class="attendance-label">Como você participará?</div>
+          <q-option-group
+            v-model="attendanceChoice"
+            :options="attendanceOptions"
+            type="radio"
+            class="attendance-group"
+            @update:model-value="errorMessage = ''"
+          />
+        </div>
+
+        <q-separator class="q-my-lg" />
+
+        <p class="list-hint">Ou busque na lista de convidados (famílias e grupos):</p>
+
         <q-input
           :model-value="searchTerm"
           label="Buscar convidado (mín. 3 letras)"
           outlined
           dense
-          class="guest-input"
+          class="guest-input q-mt-sm"
           clearable
           :loading="searchLoading"
           @update:model-value="onSearchInput"
@@ -111,7 +136,7 @@
         <q-btn
           unelevated
           :loading="saving"
-          :disable="!confirmedGuests.length && !notGoingGuests.length"
+          :disable="!canSubmit"
           label="Confirmar"
           class="confirm-btn"
           @click="confirmPresence"
@@ -122,7 +147,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { api } from 'src/boot/axios'
 
 interface GuestLookup {
@@ -131,7 +156,33 @@ interface GuestLookup {
   godparent: boolean
 }
 
+type AttendanceChoice = 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY' | 'NOT_GOING'
+
+interface ConfirmPayloadEntry {
+  id?: number
+  name?: string
+  willAttend: boolean
+  attendanceType?: 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+}
+
+const attendanceOptions = [
+  {
+    label: 'Estarei presente no casamento e na recepção',
+    value: 'CEREMONY_AND_RECEPTION' as AttendanceChoice
+  },
+  {
+    label: 'Vou apenas para o casamento na igreja',
+    value: 'CEREMONY_ONLY' as AttendanceChoice
+  },
+  {
+    label: 'Não poderá ir',
+    value: 'NOT_GOING' as AttendanceChoice
+  }
+]
+
 const dialog = ref(false)
+const selfName = ref('')
+const attendanceChoice = ref<AttendanceChoice | null>(null)
 const searchTerm = ref('')
 const searchResults = ref<GuestLookup[]>([])
 const searchLoading = ref(false)
@@ -144,6 +195,22 @@ const draggingGuest = ref<GuestLookup | null>(null)
 const draggingFrom = ref<'yes' | 'no' | null>(null)
 
 let searchTimer: number | null = null
+
+const hasSelfEntry = computed(() => selfName.value.trim().length > 0)
+const hasListEntries = computed(() => confirmedGuests.value.length > 0 || notGoingGuests.value.length > 0)
+const attendingChoice = computed(() =>
+  attendanceChoice.value === 'CEREMONY_AND_RECEPTION' || attendanceChoice.value === 'CEREMONY_ONLY'
+)
+
+const canSubmit = computed(() => {
+  if (!hasSelfEntry.value && !hasListEntries.value) return false
+
+  if (hasSelfEntry.value && !attendanceChoice.value) return false
+
+  if (confirmedGuests.value.length > 0 && !attendingChoice.value) return false
+
+  return true
+})
 
 function onSearchInput (value: string | number | null) {
   searchTerm.value = value == null ? '' : String(value)
@@ -227,28 +294,64 @@ function removeGuest (list: 'yes' | 'no', id: number) {
   }
 }
 
+function buildPayload (): ConfirmPayloadEntry[] {
+  const guests: ConfirmPayloadEntry[] = []
+  const trimmedName = selfName.value.trim()
+
+  if (trimmedName) {
+    if (attendanceChoice.value === 'NOT_GOING') {
+      guests.push({ name: trimmedName, willAttend: false })
+    } else if (attendingChoice.value) {
+      guests.push({
+        name: trimmedName,
+        willAttend: true,
+        attendanceType: attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+      })
+    }
+  }
+
+  if (attendingChoice.value) {
+    const attendanceType = attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+    for (const guest of confirmedGuests.value) {
+      guests.push({ id: guest.id, willAttend: true, attendanceType })
+    }
+  }
+
+  for (const guest of notGoingGuests.value) {
+    guests.push({ id: guest.id, willAttend: false })
+  }
+
+  return guests
+}
+
+function resetForm () {
+  selfName.value = ''
+  attendanceChoice.value = null
+  confirmedGuests.value = []
+  notGoingGuests.value = []
+  searchTerm.value = ''
+  searchResults.value = []
+  errorMessage.value = ''
+}
+
 async function confirmPresence () {
-  const allGuests = [...confirmedGuests.value, ...notGoingGuests.value]
-  if (!allGuests.length) return
+  if (!canSubmit.value) return
+
+  const guests = buildPayload()
+  if (!guests.length) {
+    errorMessage.value = 'Informe seu nome ou selecione convidados da lista.'
+    return
+  }
 
   saving.value = true
   errorMessage.value = ''
 
   try {
-    await api.post('/guests/confirm', {
-      guests: [
-        ...confirmedGuests.value.map(g => ({ id: g.id, willAttend: true })),
-        ...notGoingGuests.value.map(g => ({ id: g.id, willAttend: false }))
-      ]
-    })
-
+    await api.post('/guests/confirm', { guests })
     dialog.value = false
-    confirmedGuests.value = []
-    notGoingGuests.value = []
-    searchTerm.value = ''
-    searchResults.value = []
+    resetForm()
   } catch {
-    errorMessage.value = 'Não foi possível confirmar. Verifique se algum convidado já respondeu.'
+    errorMessage.value = 'Não foi possível confirmar. Verifique se o nome já foi cadastrado ou se algum convidado já respondeu.'
   } finally {
     saving.value = false
   }
@@ -293,6 +396,12 @@ defineExpose({
   margin-top: 6px;
 }
 
+.list-hint {
+  color: #7b5a4c;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .divider {
   display: flex;
   align-items: center;
@@ -309,6 +418,24 @@ defineExpose({
 .heart {
   color: #c86b5a;
   font-size: 0.9rem;
+}
+
+.attendance-label {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a2503b;
+  margin-bottom: 8px;
+}
+
+.attendance-group :deep(.q-radio) {
+  margin-bottom: 6px;
+}
+
+.attendance-group :deep(.q-radio__label) {
+  color: #5a332d;
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 
 .search-results {
