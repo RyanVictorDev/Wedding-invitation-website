@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.List;
 
 public final class PaymentDtos {
 
@@ -68,6 +69,15 @@ public final class PaymentDtos {
     public record PixPaymentStatusResponse(
             String status,
             String expiresAt
+    ) {
+    }
+
+    public record PagedPaymentsResponse(
+            List<PaymentResponse> content,
+            int page,
+            int size,
+            long totalElements,
+            int totalPages
     ) {
     }
 

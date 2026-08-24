@@ -4,6 +4,8 @@ import com.wedding.backend.payment.abacatepay.AbacatePayClient;
 import com.wedding.backend.payment.abacatepay.PixQrCodeCreateResponse;
 import com.wedding.backend.payment.abacatepay.PixQrCodeStatusResponse;
 import com.wedding.backend.payment.api.PaymentDtos.CreatePaymentRequest;
+import com.wedding.backend.payment.api.PaymentDtos.PagedPaymentsResponse;
+import com.wedding.backend.payment.api.PaymentDtos.PaymentResponse;
 import com.wedding.backend.payment.api.PaymentDtos.PixPaymentResponse;
 import com.wedding.backend.payment.api.PaymentDtos.PixPaymentStatusResponse;
 import com.wedding.backend.payment.model.Payment;
@@ -11,6 +13,9 @@ import com.wedding.backend.payment.model.PaymentStatus;
 import com.wedding.backend.payment.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 
@@ -86,6 +91,30 @@ public class PaymentService {
         }
 
         return new PixPaymentStatusResponse(statusHolder[0], expiresAt);
+    }
+
+    @Transactional(readOnly = true)
+    public PagedPaymentsResponse listPayments(int page, int size, String status) {
+        var pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Page<Payment> result;
+
+        if ("paid".equalsIgnoreCase(status)) {
+            result = paymentRepository.findByStatus(PaymentStatus.PAID, pageable);
+        } else if ("pending".equalsIgnoreCase(status)) {
+            result = paymentRepository.findByStatus(PaymentStatus.PENDING, pageable);
+        } else if ("failed".equalsIgnoreCase(status)) {
+            result = paymentRepository.findByStatus(PaymentStatus.FAILED, pageable);
+        } else {
+            result = paymentRepository.findAll(pageable);
+        }
+
+        return new PagedPaymentsResponse(
+                result.map(PaymentResponse::fromEntity).getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        );
     }
 
     private PaymentStatus mapStatus(String providerStatus) {

@@ -51,6 +51,18 @@
 
         <DashboardGiftsSection />
 
+        <DashboardPaymentsSection
+          :rows="paymentRows"
+          :loading="paymentsLoading"
+          :page="paymentsPage"
+          :total-pages="paymentsTotalPages"
+          :total-elements="paymentsTotalElements"
+          :filter="paymentsFilter"
+          :format-date-time="formatDateTime"
+          @update:page="value => { paymentsPage = value }"
+          @update:filter="value => { paymentsFilter = value }"
+        />
+
         <DashboardMessagesSection
           :messages="messages"
           :loading="messagesLoading"
@@ -74,6 +86,7 @@ import DashboardLoginForm from 'components/dashboard/DashboardLoginForm.vue'
 import DashboardStatsSection from 'components/dashboard/DashboardStatsSection.vue'
 import DashboardGuestSection from 'components/dashboard/DashboardGuestSection.vue'
 import DashboardGiftsSection from 'components/dashboard/DashboardGiftsSection.vue'
+import DashboardPaymentsSection from 'components/dashboard/DashboardPaymentsSection.vue'
 import DashboardMessagesSection from 'components/dashboard/DashboardMessagesSection.vue'
 import DashboardUsersSection from 'components/dashboard/DashboardUsersSection.vue'
 
@@ -126,6 +139,26 @@ interface PagedMessagesResponse {
   totalPages: number
 }
 
+type PaymentStatus = 'CREATED' | 'PENDING' | 'PAID' | 'FAILED'
+
+interface PaymentRow {
+  id: number
+  amount: number
+  currency: string
+  payerName: string
+  description: string | null
+  status: PaymentStatus
+  createdAt: string
+}
+
+interface PagedPaymentsResponse {
+  content: PaymentRow[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
 const { isAuthenticated, username, logout } = useAuth()
 
 const loading = ref(true)
@@ -160,6 +193,14 @@ const messagesPage = ref(1)
 const messagesPageSize = ref(5)
 const messagesLoading = ref(false)
 const messagesTotalPages = ref(1)
+
+const paymentsFilter = ref<'paid' | 'pending' | 'all'>('paid')
+const paymentRows = ref<PaymentRow[]>([])
+const paymentsPage = ref(1)
+const paymentsPageSize = ref(10)
+const paymentsLoading = ref(false)
+const paymentsTotalPages = ref(1)
+const paymentsTotalElements = ref(0)
 
 function formatDateTime (value: string) {
   const date = new Date(value)
@@ -219,6 +260,29 @@ async function loadMessages () {
   }
 }
 
+async function loadPayments () {
+  paymentsLoading.value = true
+  try {
+    const page = paymentsPage.value - 1
+    const size = paymentsPageSize.value
+    const { data } = await api.get<PagedPaymentsResponse>('/payments', {
+      params: {
+        page,
+        size,
+        status: paymentsFilter.value
+      }
+    })
+
+    paymentRows.value = data.content ?? []
+    paymentsTotalElements.value = data.totalElements ?? 0
+    paymentsTotalPages.value = Math.max(1, data.totalPages ?? 1)
+  } catch (e) {
+    console.error('Erro ao carregar pagamentos', e)
+  } finally {
+    paymentsLoading.value = false
+  }
+}
+
 function handleGuestSearch (term: string) {
   guestSearch.value = term
   guestPage.value = 1
@@ -235,6 +299,7 @@ function handleLogout () {
   summary.value = null
   guestRows.value = []
   messages.value = []
+  paymentRows.value = []
 }
 
 async function loadDashboardData () {
@@ -242,6 +307,7 @@ async function loadDashboardData () {
   await Promise.all([
     loadSummary(),
     loadGuests(),
+    loadPayments(),
     loadMessages()
   ])
 }
@@ -257,6 +323,15 @@ watch(guestPage, () => {
 
 watch(messagesPage, () => {
   void loadMessages()
+})
+
+watch(paymentsFilter, () => {
+  paymentsPage.value = 1
+  void loadPayments()
+})
+
+watch(paymentsPage, () => {
+  void loadPayments()
 })
 
 onMounted(() => {
