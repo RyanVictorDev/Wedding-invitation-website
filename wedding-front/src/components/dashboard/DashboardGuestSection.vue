@@ -313,7 +313,7 @@ interface GuestSummary {
   confirmed: boolean
   godparent: boolean
   responded: boolean
-  attendanceType: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | null
+  attendanceType: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | 'RECEPTION_ONLY' | null
   ageCategory: 'ADULT' | 'CHILD' | null
   confirmationDate: string | null
 }
@@ -403,8 +403,9 @@ function statusColor (row: GuestSummary) {
   return row.confirmed ? 'positive' : 'negative'
 }
 
-function attendanceLabel (type: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION') {
+function attendanceLabel (type: 'CEREMONY_ONLY' | 'CEREMONY_AND_RECEPTION' | 'RECEPTION_ONLY') {
   if (type === 'CEREMONY_ONLY') return 'Apenas igreja'
+  if (type === 'RECEPTION_ONLY') return 'Apenas recepção'
   return 'Casamento + recepção'
 }
 

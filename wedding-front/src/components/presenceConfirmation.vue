@@ -179,14 +179,15 @@ interface ListGuest extends GuestLookup {
   ageCategory: 'ADULT' | 'CHILD'
 }
 
-type AttendanceChoice = 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY' | 'NOT_GOING'
+type AttendanceChoice = 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY' | 'RECEPTION_ONLY' | 'NOT_GOING'
 type AgeCategory = 'ADULT' | 'CHILD'
+type AttendingChoice = 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY' | 'RECEPTION_ONLY'
 
 interface ConfirmPayloadEntry {
   id?: number
   name?: string
   willAttend: boolean
-  attendanceType?: 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+  attendanceType?: AttendingChoice
   ageCategory: AgeCategory
 }
 
@@ -203,6 +204,10 @@ const attendanceOptions = [
   {
     label: 'Vou apenas para o casamento na igreja',
     value: 'CEREMONY_ONLY' as AttendanceChoice
+  },
+  {
+    label: 'Vou apenas para a recepção',
+    value: 'RECEPTION_ONLY' as AttendanceChoice
   },
   {
     label: 'Não poderá ir',
@@ -230,7 +235,9 @@ let searchTimer: number | null = null
 const hasSelfEntry = computed(() => selfName.value.trim().length > 0)
 const hasListEntries = computed(() => confirmedGuests.value.length > 0 || notGoingGuests.value.length > 0)
 const attendingChoice = computed(() =>
-  attendanceChoice.value === 'CEREMONY_AND_RECEPTION' || attendanceChoice.value === 'CEREMONY_ONLY'
+  attendanceChoice.value === 'CEREMONY_AND_RECEPTION'
+  || attendanceChoice.value === 'CEREMONY_ONLY'
+  || attendanceChoice.value === 'RECEPTION_ONLY'
 )
 
 const canSubmit = computed(() => {
@@ -346,14 +353,14 @@ function buildPayload (): ConfirmPayloadEntry[] {
       guests.push({
         name: trimmedName,
         willAttend: true,
-        attendanceType: attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY',
+        attendanceType: attendanceChoice.value as AttendingChoice,
         ageCategory: selfAgeCategory.value
       })
     }
   }
 
   if (attendingChoice.value) {
-    const attendanceType = attendanceChoice.value as 'CEREMONY_AND_RECEPTION' | 'CEREMONY_ONLY'
+    const attendanceType = attendanceChoice.value as AttendingChoice
     for (const guest of confirmedGuests.value) {
       guests.push({
         id: guest.id,
